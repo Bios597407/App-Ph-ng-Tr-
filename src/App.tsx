@@ -12,6 +12,7 @@ import {
   HouseExpense,
 } from './types/index.ts';
 import { api } from './services/api.ts';
+import { getClientFallbackDb, getDefaultHouseProfile } from './utils/clientDbFallback.ts';
 import { formatVND } from './utils/formatters.ts';
 
 // UI Components
@@ -139,17 +140,28 @@ export default function App() {
           api.getExpenses(),
         ]);
 
-      setProfile(houseRes.profile);
-      setRooms(roomsData);
-      setInvoices(invsData);
-      setPayments(paysData);
-      setTenants(tenantsData.tenants || []);
-      setTenancies(tenantsData.tenancies || []);
-      setMeters(metersData);
-      setTickets(tixData);
-      setExpenses(expData);
+      let validRooms = roomsData;
+      if (!validRooms || validRooms.length === 0) {
+        const fallbackDb = getClientFallbackDb();
+        validRooms = fallbackDb.rooms;
+      }
+
+      setProfile(houseRes?.profile || getDefaultHouseProfile());
+      setRooms(validRooms);
+      setInvoices(invsData || []);
+      setPayments(paysData || []);
+      setTenants(tenantsData?.tenants && tenantsData.tenants.length > 0 ? tenantsData.tenants : getClientFallbackDb().tenants);
+      setTenancies(tenantsData?.tenancies && tenantsData.tenancies.length > 0 ? tenantsData.tenancies : getClientFallbackDb().tenancies);
+      setMeters(metersData || []);
+      setTickets(tixData || []);
+      setExpenses(expData || []);
     } catch (err) {
       console.error('Error loading data:', err);
+      const fallbackDb = getClientFallbackDb();
+      setProfile(fallbackDb.profile);
+      setRooms(fallbackDb.rooms);
+      setTenants(fallbackDb.tenants);
+      setTenancies(fallbackDb.tenancies);
     }
   };
 
@@ -382,7 +394,7 @@ export default function App() {
               title="Cài đặt ngân hàng & đơn giá điện nước mặc định"
             >
               <Settings className="w-4 h-4 text-indigo-600 shrink-0" />
-              <span className="whitespace-nowrap">⚙️ Cài đặt (Ngân hàng & Đơn giá)</span>
+              <span className="whitespace-nowrap">Cài đặt (Ngân hàng & Đơn giá)</span>
             </button>
 
             {/* Single Period Selector in Vietnamese with Prev/Next Navigation */}
@@ -499,29 +511,44 @@ export default function App() {
               </button>
             </div>
 
-            {/* View Switcher Tabs & Excel Speed Entry & Roll Forward Buttons */}
+            {/* Action Buttons & View Switcher */}
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setViewMode(viewMode === 'grid' ? 'table' : 'grid')}
-                className={`py-2 px-3.5 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition-all shadow-2xs ${
+                className={`py-2 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-1.5 transition-all shadow-2xs ${
                   viewMode === 'table'
                     ? 'bg-emerald-600 text-white'
                     : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
                 }`}
               >
-                <Table className="w-4 h-4" />
-                <span>⚡ Bảng nhập nhanh (Excel Mode)</span>
+                <Table className="w-4 h-4 shrink-0" />
+                <span>Bảng nhập nhanh (Excel Mode)</span>
               </button>
 
               <button
                 onClick={handleRollForwardMonth}
-                className="py-2 px-3.5 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-2xs"
+                className="py-2 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-2xs"
                 title="Lấy số mới kỳ này gán thành số cũ kỳ sau và khởi tạo tháng mới"
               >
                 <RotateCcw className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="whitespace-nowrap">🔄 Kết chuyển sang kỳ mới</span>
+                <span className="whitespace-nowrap">Kết chuyển sang kỳ mới</span>
               </button>
-            </div>
+
+              <button
+                onClick={() => setShowReminder(true)}
+                className="py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-extrabold text-xs sm:text-sm flex items-center gap-1.5 transition-colors shadow-2xs"
+              >
+                <Bell className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Nhắc tiền ngày 10 ({unpaidRoomsCount})</span>
+              </button>
+
+              <button
+                onClick={() => setShowAudit(true)}
+                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm flex items-center gap-1.5 transition-colors shadow-2xs"
+              >
+                <History className="w-4 h-4 text-slate-500 shrink-0" />
+                <span>Nhật ký</span>
+              </button>
 
               <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
                 <button
@@ -544,42 +571,6 @@ export default function App() {
                 </button>
               </div>
             </div>
-
-          {/* Action Row */}
-          <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setShowWalkthrough(true)}
-                className="py-1.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black flex items-center gap-1.5 transition-colors shadow-2xs"
-              >
-                <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                <span>Ghi điện nước lượt</span>
-              </button>
-
-              <button
-                onClick={() => setShowReminder(true)}
-                className="py-1.5 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold flex items-center gap-1.5 transition-colors"
-              >
-                <Bell className="w-3.5 h-3.5 text-amber-600" />
-                <span>Nhắc tiền ngày 10 ({unpaidRoomsCount})</span>
-              </button>
-
-              <button
-                onClick={() => setShowInvoiceManager(true)}
-                className="py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold flex items-center gap-1.5 transition-colors"
-              >
-                <Settings className="w-3.5 h-3.5 text-slate-600" />
-                <span>Chốt sổ kỳ này</span>
-              </button>
-            </div>
-
-            <button
-              onClick={() => setShowAudit(true)}
-              className="py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center gap-1.5 transition-colors"
-            >
-              <History className="w-3.5 h-3.5 text-slate-500" />
-              <span>Nhật ký</span>
-            </button>
           </div>
         </div>
 
