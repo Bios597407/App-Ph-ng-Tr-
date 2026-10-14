@@ -1,0 +1,1505 @@
+{
+  "profile": {
+    "name": "Hóa Đơn Tiền Nhà",
+    "address": "123 Đường Công Nhân, Phường Bình An, TP. Dĩ An, Bình Dương",
+    "ownerName": "Nguyễn Văn Chủ",
+    "ownerPhone": "0909123456",
+    "ownerEmail": "chutro@anbinh.vn",
+    "defaultDueDay": 10,
+    "defaultCutoffDay": 5,
+    "electricityDefaultRate": 3500,
+    "waterDefaultRate": 20000,
+    "waterDefaultType": "meter",
+    "internetDefaultFee": 50000,
+    "garbageDefaultFee": 30000,
+    "bankAccount": {
+      "bankId": "MB",
+      "bankName": "MBBank - Ngân hàng Quân Đội",
+      "accountNumber": "99990909123456",
+      "accountHolder": "NGUYEN VAN CHU",
+      "qrTemplate": "compact"
+    },
+    "reminderMessageTemplate": "Thông báo tiền phòng tháng {period} của {roomName}: Tổng còn phải trả {amount} đ. Hạn thanh toán: ngày 10/{month}. Vui lòng chuyển khoản STK: {bankAccount} ({bankName}) với nội dung: {transferNote}. Trân trọng cảm ơn!",
+    "isInitialSetupCompleted": true
+  },
+  "rooms": [
+    {
+      "id": "room-P01",
+      "code": "P01",
+      "name": "Phòng 01",
+      "status": "rented",
+      "currentRent": 1700000,
+      "areaM2": 22,
+      "maxOccupants": 3,
+      "amenities": [
+        "Gác lửng",
+        "WC riêng",
+        "Kệ bếp",
+        "Quạt trần"
+      ],
+      "notes": "Phòng dãy trệt P01",
+      "currentStayId": "stay-P01-01",
+      "priceHistory": [
+        {
+          "id": "ph-P01-01",
+          "effectiveDate": "2026-01-01",
+          "baseRent": 1700000,
+          "electricityRate": 3500,
+          "waterRate": 20000,
+          "waterBillingType": "meter",
+          "internetFee": 50000,
+          "wasteFee": 30000
+        }
+      ],
+      "currentMeter": {
+        "electricNumber": 1245,
+        "waterNumber": 352,
+        "electricLastRecordedDate": "2026-10-14",
+        "waterLastRecordedDate": "2026-10-14"
+      }
+    },
+    {
+      "id": "room-P02",
+      "code": "P02",
+      "name": "Phòng 02",
+      "status": "rented",
+      "currentRent": 1900000,
+      "areaM2": 18,
+      "maxOccupants": 3,
+      "amenities": [
+        "Gác lửng",
+        "WC riêng",
+        "Kệ bếp",
+        "Quạt trần"
+      ],
+      "notes": "Phòng dãy trệt P02",
+      "currentStayId": "stay-P02-01",
+      "priceHistory": [
+        {
+          "id": "ph-P02-01",
+          "effectiveDate": "2026-01-01",
+          "baseRent": 1900000,
+          "electricityRate": 3500,
+          "waterRate": 20000,
+          "waterBillingType": "meter",
+          "internetFee": 50000,
+          "wasteFee": 30000
+        }
+      ],
+      "currentMeter": {
+        "electricNumber": 1290,
+        "waterNumber": 364,
+        "electricLastRecordedDate": "2026-10-05",
+        "waterLastRecordedDate": "2026-10-05"
+      }
+    },
+    {
+      "id": "room-P03",
+      "code": "P03",
+      "name": "Phòng 03",
+      "status": "rented",
+      "currentRent": 1500000,
+      "areaM2": 22,
+      "maxOccupants": 3,
+      "amenities": [
+        "Gác lửng",
+        "WC riêng",
+        "Kệ bếp",
+        "Quạt trần"
+      ],
+      "notes": "Phòng dãy trệt P03",
+      "currentStayId": "stay-P03-01",
+      "priceHistory": [
+        {
+          "id": "ph-P03-01",
+          "effectiveDate": "2026-01-01",
+          "baseRent": 1500000,
+          "electricityRate": 3500,
+          "waterRate": 20000,
+          "waterBillingType": "meter",
+          "internetFee": 50000,
+          "wasteFee": 30000
+        }
+      ],
+      "currentMeter": {
+        "electricNumber": 1335,
+        "waterNumber": 376,
+        "electricLastRecordedDate": "2026-10-05",
+        "waterLastRecordedDate": "2026-10-05"
+      }
+    },
+    {
+      "id": "room-P04",
+      "code": "P04",
+      "name": "Phòng 04",
+      "status": "rented",
+      "currentRent": 1700000,
+      "areaM2": 18,
+      "maxOccupants": 3,
+      "amenities": [
+        "Gác lửng",
+        "WC riêng",
+        "Kệ bếp",
+        "Quạt trần"
+      ],
+      "notes": "Phòng dãy trệt P04",
+      "currentStayId": "stay-P04-01",
+      "priceHistory": [
+        {
+          "id": "ph-P04-01",
+          "effectiveDate": "2026-01-01",
+          "baseRent": 1700000,
+          "electricityRate": 3500,
+          "waterRate": 20000,
+          "waterBillingType": "meter",
+          "internetFee": 50000,
+          "wasteFee": 30000
+        }
+      ],
+      "currentMeter": {
+        "electricNumber": 1380,
+        "waterNumber": 388,
+        "electricLastRecordedDate": "2026-10-05",
+        "waterLastRecordedDate": "2026-10-05"
+      }
+    },
+    {
+      "id": "room-P05",
+      "code": "P05",
+      "name": "Phòng 05",
+      "status": "rented",
+      "currentRent": 1900000,
+      "areaM2": 22,
+      "maxOccupants": 3,
+      "amenities": [
+        "Gác lửng",
+        "WC riêng",
+        "Kệ bếp",
+        "Quạt trần"
+      ],
+      "notes": "Phòng dãy trệt P05",
+      "currentStayId": "stay-P05-01",
+      "priceHistory": [
+        {
+          "id": "ph-P05-01",
+          "effectiveDate": "2026-01-01",
+          "baseRent": 1900000,
+          "electricityRate": 3500,
+          "waterRate": 20000,
+          "waterBillingType": "meter",
+          "internetFee": 50000,
+          "wasteFee": 30000
+        }
+      ],
+      "currentMeter": {
+        "electricNumber": 1425,
+        "waterNumber": 400,
+        "electricLastRecordedDate": "2026-10-05",
+        "waterLastRecordedDate": "2026-10-05"
+      }
+    },
+    {
+      "id": "room-P06",
+      "code": "P06",
+      "name": "Phòng 06",
+      "status": "rented",
+      "currentRent": 1500000,
+      "areaM2": 18,
+      "maxOccupants": 3,
+      "amenities": [
+        "Gác lửng",
+        "WC riêng",
+        "Kệ bếp",
+        "Quạt trần"
+      ],
+      "notes": "Phòng dãy trệt P06",
+      "currentStayId": "stay-P06-01",
+      "priceHistory": [
+        {
+          "id": "ph-P06-01",
+          "effectiveDate": "2026-01-01",
+          "baseRent": 1500000,
+          "electricityRate": 3500,
+          "waterRate": 20000,
+          "waterBillingType": "meter",
+          "internetFee": 50000,
+          "wasteFee": 30000
+        }
+      ],
+      "currentMeter": {
+        "electricNumber": 1470,
+        "waterNumber": 412,
+        "electricLastRecordedDate": "2026-10-05",
+        "waterLastRecordedDate": "2026-10-05"
+      }
+    },
+    {
+      "id": "room-P07",
+      "code": "P07",
+      "name": "Phòng 07",
+      "status": "rented",
+      "currentRent": 1700000,
+      "areaM2": 22,
+      "maxOccupants": 3,
+      "amenities": [
+        "Gác lửng",
+        "WC riêng",
+        "Kệ bếp",
+        "Quạt trần"
+      ],
+      "notes": "Phòng dãy trệt P07",
+      "currentStayId": "stay-P07-01",
+      "priceHistory": [
+        {
+          "id": "ph-P07-01",
+          "effectiveDate": "2026-01-01",
+          "baseRent": 1700000,
+          "electricityRate": 3500,
+          "waterRate": 20000,
+          "waterBillingType": "meter",
+          "internetFee": 50000,
+          "wasteFee": 30000
+        }
+      ],
+      "currentMeter": {
+        "electricNumber": 1515,
+        "waterNumber": 424,
+        "electricLastRecordedDate": "2026-10-05",
+        "waterLastRecordedDate": "2026-10-05"
+      }
+    },
+    {
+      "id": "room-P08",
+      "code": "P08",
+      "name": "Phòng 08",
+      "status": "rented",
+      "currentRent": 1900000,
+      "areaM2": 18,
+      "maxOccupants": 3,
+      "amenities": [
+        "Gác lửng",
+        "WC riêng",
+        "Kệ bếp",
+        "Quạt trần"
+      ],
+      "notes": "Phòng dãy trệt P08",
+      "currentStayId": "stay-P08-01",
+      "priceHistory": [
+        {
+          "id": "ph-P08-01",
+          "effectiveDate": "2026-01-01",
+          "baseRent": 1900000,
+          "electricityRate": 3500,
+          "waterRate": 20000,
+          "waterBillingType": "meter",
+          "internetFee": 50000,
+          "wasteFee": 30000
+        }
+      ],
+      "currentMeter": {
+        "electricNumber": 1560,
+        "waterNumber": 436,
+        "electricLastRecordedDate": "2026-10-05",
+        "waterLastRecordedDate": "2026-10-05"
+      }
+    },
+    {
+      "id": "room-P09",
+      "code": "P09",
+      "name": "Phòng 09",
+      "status": "vacant",
+      "currentRent": 1500000,
+      "areaM2": 22,
+      "maxOccupants": 3,
+      "amenities": [
+        "Gác lửng",
+        "WC riêng",
+        "Kệ bếp",
+        "Quạt trần"
+      ],
+      "notes": "Phòng dãy trệt P09",
+      "currentStayId": null,
+      "priceHistory": [
+        {
+          "id": "ph-P09-01",
+          "effectiveDate": "2026-01-01",
+          "baseRent": 1500000,
+          "electricityRate": 3500,
+          "waterRate": 20000,
+          "waterBillingType": "meter",
+          "internetFee": 50000,
+          "wasteFee": 30000
+        }
+      ],
+      "currentMeter": {
+        "electricNumber": 1605,
+        "waterNumber": 448,
+        "electricLastRecordedDate": "2026-10-05",
+        "waterLastRecordedDate": "2026-10-05"
+      }
+    }
+  ],
+  "tenancies": [
+    {
+      "id": "stay-P01-01",
+      "roomId": "room-P01",
+      "representativeName": "Lê Văn An",
+      "representativePhone": "0911234561",
+      "startDate": "2026-01-01",
+      "status": "active",
+      "baseRent": 1700000,
+      "depositAmount": 1700000,
+      "initialDebt": 0,
+      "initialAdvancePayment": 0,
+      "paymentDueDay": 10,
+      "waterBillingType": "meter",
+      "electricityRate": 3500,
+      "waterRate": 20000,
+      "garbageFee": 30000,
+      "internetFee": 50000,
+      "oddDayCalculationRule": "standard_30_days",
+      "coOccupantsCount": 2,
+      "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
+    },
+    {
+      "id": "stay-P02-01",
+      "roomId": "room-P02",
+      "representativeName": "Phạm Thị Bích",
+      "representativePhone": "0921234562",
+      "startDate": "2026-01-01",
+      "status": "active",
+      "baseRent": 1900000,
+      "depositAmount": 1900000,
+      "initialDebt": 300000,
+      "initialDebtNote": "Nợ tiền điện nước tháng trước chưa nộp đủ",
+      "initialAdvancePayment": 0,
+      "paymentDueDay": 10,
+      "waterBillingType": "meter",
+      "electricityRate": 3500,
+      "waterRate": 20000,
+      "garbageFee": 30000,
+      "internetFee": 50000,
+      "oddDayCalculationRule": "standard_30_days",
+      "coOccupantsCount": 2,
+      "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
+    },
+    {
+      "id": "stay-P03-01",
+      "roomId": "room-P03",
+      "representativeName": "Hoàng Văn Cường",
+      "representativePhone": "0931234563",
+      "startDate": "2026-01-01",
+      "status": "active",
+      "baseRent": 1500000,
+      "depositAmount": 1500000,
+      "initialDebt": 0,
+      "initialAdvancePayment": 500000,
+      "paymentDueDay": 10,
+      "waterBillingType": "meter",
+      "electricityRate": 3500,
+      "waterRate": 20000,
+      "garbageFee": 30000,
+      "internetFee": 50000,
+      "oddDayCalculationRule": "standard_30_days",
+      "coOccupantsCount": 2,
+      "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
+    },
+    {
+      "id": "stay-P04-01",
+      "roomId": "room-P04",
+      "representativeName": "Đỗ Thị Dung",
+      "representativePhone": "0941234564",
+      "startDate": "2026-01-01",
+      "status": "active",
+      "baseRent": 1700000,
+      "depositAmount": 1700000,
+      "initialDebt": 0,
+      "initialAdvancePayment": 0,
+      "paymentDueDay": 10,
+      "waterBillingType": "meter",
+      "electricityRate": 3500,
+      "waterRate": 20000,
+      "garbageFee": 30000,
+      "internetFee": 50000,
+      "oddDayCalculationRule": "standard_30_days",
+      "coOccupantsCount": 2,
+      "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
+    },
+    {
+      "id": "stay-P05-01",
+      "roomId": "room-P05",
+      "representativeName": "Vũ Tuấn Em",
+      "representativePhone": "0951234565",
+      "startDate": "2026-01-01",
+      "status": "active",
+      "baseRent": 1900000,
+      "depositAmount": 1900000,
+      "initialDebt": 0,
+      "initialAdvancePayment": 0,
+      "paymentDueDay": 10,
+      "waterBillingType": "meter",
+      "electricityRate": 3500,
+      "waterRate": 20000,
+      "garbageFee": 30000,
+      "internetFee": 50000,
+      "oddDayCalculationRule": "standard_30_days",
+      "coOccupantsCount": 2,
+      "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
+    },
+    {
+      "id": "stay-P06-01",
+      "roomId": "room-P06",
+      "representativeName": "Ngô Thị Phương",
+      "representativePhone": "0961234566",
+      "startDate": "2026-01-01",
+      "status": "active",
+      "baseRent": 1500000,
+      "depositAmount": 1500000,
+      "initialDebt": 0,
+      "initialAdvancePayment": 0,
+      "paymentDueDay": 10,
+      "waterBillingType": "meter",
+      "electricityRate": 3500,
+      "waterRate": 20000,
+      "garbageFee": 30000,
+      "internetFee": 50000,
+      "oddDayCalculationRule": "standard_30_days",
+      "coOccupantsCount": 2,
+      "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
+    },
+    {
+      "id": "stay-P07-01",
+      "roomId": "room-P07",
+      "representativeName": "Bùi Văn Giáp",
+      "representativePhone": "0971234567",
+      "startDate": "2026-01-01",
+      "status": "active",
+      "baseRent": 1700000,
+      "depositAmount": 1700000,
+      "initialDebt": 0,
+      "initialAdvancePayment": 0,
+      "paymentDueDay": 10,
+      "waterBillingType": "meter",
+      "electricityRate": 3500,
+      "waterRate": 20000,
+      "garbageFee": 30000,
+      "internetFee": 50000,
+      "oddDayCalculationRule": "standard_30_days",
+      "coOccupantsCount": 2,
+      "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
+    },
+    {
+      "id": "stay-P08-01",
+      "roomId": "room-P08",
+      "representativeName": "Đặng Hải Hà",
+      "representativePhone": "0981234568",
+      "startDate": "2026-01-01",
+      "status": "active",
+      "baseRent": 1900000,
+      "depositAmount": 1900000,
+      "initialDebt": 0,
+      "initialAdvancePayment": 0,
+      "paymentDueDay": 10,
+      "waterBillingType": "meter",
+      "electricityRate": 3500,
+      "waterRate": 20000,
+      "garbageFee": 30000,
+      "internetFee": 50000,
+      "oddDayCalculationRule": "standard_30_days",
+      "coOccupantsCount": 2,
+      "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
+    }
+  ],
+  "tenants": [
+    {
+      "id": "tenant-P01-01",
+      "fullName": "Lê Văn An",
+      "phone": "0911234561",
+      "idCardNumber": "079200000001",
+      "isRepresentative": true,
+      "roomId": "room-P01",
+      "stayId": "stay-P01-01",
+      "moveInDate": "2026-01-01"
+    },
+    {
+      "id": "tenant-P02-01",
+      "fullName": "Phạm Thị Bích",
+      "phone": "0921234562",
+      "idCardNumber": "079200000002",
+      "isRepresentative": true,
+      "roomId": "room-P02",
+      "stayId": "stay-P02-01",
+      "moveInDate": "2026-01-01"
+    },
+    {
+      "id": "tenant-P03-01",
+      "fullName": "Hoàng Văn Cường",
+      "phone": "0931234563",
+      "idCardNumber": "079200000003",
+      "isRepresentative": true,
+      "roomId": "room-P03",
+      "stayId": "stay-P03-01",
+      "moveInDate": "2026-01-01"
+    },
+    {
+      "id": "tenant-P04-01",
+      "fullName": "Đỗ Thị Dung",
+      "phone": "0941234564",
+      "idCardNumber": "079200000004",
+      "isRepresentative": true,
+      "roomId": "room-P04",
+      "stayId": "stay-P04-01",
+      "moveInDate": "2026-01-01"
+    },
+    {
+      "id": "tenant-P05-01",
+      "fullName": "Vũ Tuấn Em",
+      "phone": "0951234565",
+      "idCardNumber": "079200000005",
+      "isRepresentative": true,
+      "roomId": "room-P05",
+      "stayId": "stay-P05-01",
+      "moveInDate": "2026-01-01"
+    },
+    {
+      "id": "tenant-P06-01",
+      "fullName": "Ngô Thị Phương",
+      "phone": "0961234566",
+      "idCardNumber": "079200000006",
+      "isRepresentative": true,
+      "roomId": "room-P06",
+      "stayId": "stay-P06-01",
+      "moveInDate": "2026-01-01"
+    },
+    {
+      "id": "tenant-P07-01",
+      "fullName": "Bùi Văn Giáp",
+      "phone": "0971234567",
+      "idCardNumber": "079200000007",
+      "isRepresentative": true,
+      "roomId": "room-P07",
+      "stayId": "stay-P07-01",
+      "moveInDate": "2026-01-01"
+    },
+    {
+      "id": "tenant-P08-01",
+      "fullName": "Đặng Hải Hà",
+      "phone": "0981234568",
+      "idCardNumber": "079200000008",
+      "isRepresentative": true,
+      "roomId": "room-P08",
+      "stayId": "stay-P08-01",
+      "moveInDate": "2026-01-01"
+    }
+  ],
+  "meterReadings": [
+    {
+      "id": "mr-P01-2026-10",
+      "roomId": "room-P01",
+      "period": "2026-10",
+      "recordedDate": "2026-10-14",
+      "recordedBy": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "electricStart": 1165,
+      "electricEnd": 1245,
+      "electricUsage": 80,
+      "electricRate": 3500,
+      "electricTotal": 280000,
+      "waterStart": 342,
+      "waterEnd": 352,
+      "waterUsage": 10,
+      "waterRate": 20000,
+      "waterTotal": 200000,
+      "waterBillingType": "meter",
+      "isAnomaly": false,
+      "anomalyReason": "",
+      "isConfirmed": true
+    },
+    {
+      "id": "mr-P02-202610",
+      "roomId": "room-P02",
+      "period": "2026-10",
+      "recordedDate": "2026-10-05",
+      "recordedBy": "Trần Thị Thu",
+      "electricStart": 1210,
+      "electricEnd": 1290,
+      "electricUsage": 80,
+      "electricRate": 3500,
+      "electricTotal": 280000,
+      "waterStart": 354,
+      "waterEnd": 364,
+      "waterUsage": 10,
+      "waterRate": 20000,
+      "waterTotal": 200000,
+      "waterBillingType": "meter",
+      "isAnomaly": false,
+      "isConfirmed": true
+    },
+    {
+      "id": "mr-P03-202610",
+      "roomId": "room-P03",
+      "period": "2026-10",
+      "recordedDate": "2026-10-05",
+      "recordedBy": "Trần Thị Thu",
+      "electricStart": 1255,
+      "electricEnd": 1335,
+      "electricUsage": 80,
+      "electricRate": 3500,
+      "electricTotal": 280000,
+      "waterStart": 366,
+      "waterEnd": 376,
+      "waterUsage": 10,
+      "waterRate": 20000,
+      "waterTotal": 200000,
+      "waterBillingType": "meter",
+      "isAnomaly": false,
+      "isConfirmed": true
+    },
+    {
+      "id": "mr-P04-202610",
+      "roomId": "room-P04",
+      "period": "2026-10",
+      "recordedDate": "2026-10-05",
+      "recordedBy": "Trần Thị Thu",
+      "electricStart": 1300,
+      "electricEnd": 1380,
+      "electricUsage": 80,
+      "electricRate": 3500,
+      "electricTotal": 280000,
+      "waterStart": 378,
+      "waterEnd": 388,
+      "waterUsage": 10,
+      "waterRate": 20000,
+      "waterTotal": 200000,
+      "waterBillingType": "meter",
+      "isAnomaly": false,
+      "isConfirmed": true
+    },
+    {
+      "id": "mr-P05-202610",
+      "roomId": "room-P05",
+      "period": "2026-10",
+      "recordedDate": "2026-10-05",
+      "recordedBy": "Trần Thị Thu",
+      "electricStart": 1345,
+      "electricEnd": 1425,
+      "electricUsage": 80,
+      "electricRate": 3500,
+      "electricTotal": 280000,
+      "waterStart": 390,
+      "waterEnd": 400,
+      "waterUsage": 10,
+      "waterRate": 20000,
+      "waterTotal": 200000,
+      "waterBillingType": "meter",
+      "isAnomaly": false,
+      "isConfirmed": true
+    },
+    {
+      "id": "mr-P06-202610",
+      "roomId": "room-P06",
+      "period": "2026-10",
+      "recordedDate": "2026-10-05",
+      "recordedBy": "Trần Thị Thu",
+      "electricStart": 1390,
+      "electricEnd": 1470,
+      "electricUsage": 80,
+      "electricRate": 3500,
+      "electricTotal": 280000,
+      "waterStart": 402,
+      "waterEnd": 412,
+      "waterUsage": 10,
+      "waterRate": 20000,
+      "waterTotal": 200000,
+      "waterBillingType": "meter",
+      "isAnomaly": false,
+      "isConfirmed": true
+    },
+    {
+      "id": "mr-P07-202610",
+      "roomId": "room-P07",
+      "period": "2026-10",
+      "recordedDate": "2026-10-05",
+      "recordedBy": "Trần Thị Thu",
+      "electricStart": 1435,
+      "electricEnd": 1515,
+      "electricUsage": 80,
+      "electricRate": 3500,
+      "electricTotal": 280000,
+      "waterStart": 414,
+      "waterEnd": 424,
+      "waterUsage": 10,
+      "waterRate": 20000,
+      "waterTotal": 200000,
+      "waterBillingType": "meter",
+      "isAnomaly": false,
+      "isConfirmed": true
+    },
+    {
+      "id": "mr-P08-202610",
+      "roomId": "room-P08",
+      "period": "2026-10",
+      "recordedDate": "2026-10-05",
+      "recordedBy": "Trần Thị Thu",
+      "electricStart": 1480,
+      "electricEnd": 1560,
+      "electricUsage": 80,
+      "electricRate": 3500,
+      "electricTotal": 280000,
+      "waterStart": 426,
+      "waterEnd": 436,
+      "waterUsage": 10,
+      "waterRate": 20000,
+      "waterTotal": 200000,
+      "waterBillingType": "meter",
+      "isAnomaly": false,
+      "isConfirmed": true
+    }
+  ],
+  "invoices": [
+    {
+      "id": "inv-P01-202610",
+      "invoiceCode": "HD-202610-P01",
+      "roomId": "room-P01",
+      "stayId": "stay-P01-01",
+      "periodMonth": "2026-10",
+      "utilityPeriodMonth": "2026-10",
+      "createdDate": "2026-10-06",
+      "dueDate": "2026-10-10",
+      "payerName": "Lê Văn An",
+      "items": [
+        {
+          "id": "item-P01-rent",
+          "type": "rent",
+          "name": "Tiền thuê phòng tháng 10/2026",
+          "amount": 1700000
+        },
+        {
+          "id": "item-P01-elec",
+          "type": "electricity",
+          "name": "Điện (80 kWh x 3.500 đ)",
+          "quantity": 80,
+          "unitPrice": 3500,
+          "amount": 280000
+        },
+        {
+          "id": "item-P01-water",
+          "type": "water",
+          "name": "Nước (10 m3 x 20.000 đ)",
+          "quantity": 10,
+          "unitPrice": 20000,
+          "amount": 200000
+        },
+        {
+          "id": "item-P01-garb",
+          "type": "garbage",
+          "name": "Rác vệ sinh",
+          "amount": 30000
+        },
+        {
+          "id": "item-P01-net",
+          "type": "internet",
+          "name": "Wifi Internet",
+          "amount": 50000
+        }
+      ],
+      "currentCycleTotal": 2260000,
+      "previousDebt": 0,
+      "appliedAdvance": 0,
+      "paidAmount": 1000000,
+      "remainingBalance": 1260000,
+      "status": "locked",
+      "paymentStatus": "partial",
+      "version": 1
+    },
+    {
+      "id": "inv-P02-202610",
+      "invoiceCode": "HD-202610-P02",
+      "roomId": "room-P02",
+      "stayId": "stay-P02-01",
+      "periodMonth": "2026-10",
+      "utilityPeriodMonth": "2026-10",
+      "createdDate": "2026-10-06",
+      "dueDate": "2026-10-10",
+      "payerName": "Phạm Thị Bích",
+      "items": [
+        {
+          "id": "item-P02-rent",
+          "type": "rent",
+          "name": "Tiền thuê phòng tháng 10/2026",
+          "amount": 1900000
+        },
+        {
+          "id": "item-P02-elec",
+          "type": "electricity",
+          "name": "Điện (80 kWh x 3.500 đ)",
+          "quantity": 80,
+          "unitPrice": 3500,
+          "amount": 280000
+        },
+        {
+          "id": "item-P02-water",
+          "type": "water",
+          "name": "Nước (10 m3 x 20.000 đ)",
+          "quantity": 10,
+          "unitPrice": 20000,
+          "amount": 200000
+        },
+        {
+          "id": "item-P02-garb",
+          "type": "garbage",
+          "name": "Rác vệ sinh",
+          "amount": 30000
+        },
+        {
+          "id": "item-P02-net",
+          "type": "internet",
+          "name": "Wifi Internet",
+          "amount": 50000
+        }
+      ],
+      "currentCycleTotal": 2460000,
+      "previousDebt": 300000,
+      "appliedAdvance": 0,
+      "paidAmount": 0,
+      "remainingBalance": 2760000,
+      "status": "locked",
+      "paymentStatus": "unpaid",
+      "version": 1
+    },
+    {
+      "id": "inv-P03-202610",
+      "invoiceCode": "HD-202610-P03",
+      "roomId": "room-P03",
+      "stayId": "stay-P03-01",
+      "periodMonth": "2026-10",
+      "utilityPeriodMonth": "2026-10",
+      "createdDate": "2026-10-06",
+      "dueDate": "2026-10-10",
+      "payerName": "Hoàng Văn Cường",
+      "items": [
+        {
+          "id": "item-P03-rent",
+          "type": "rent",
+          "name": "Tiền thuê phòng tháng 10/2026",
+          "amount": 1500000
+        },
+        {
+          "id": "item-P03-elec",
+          "type": "electricity",
+          "name": "Điện (80 kWh x 3.500 đ)",
+          "quantity": 80,
+          "unitPrice": 3500,
+          "amount": 280000
+        },
+        {
+          "id": "item-P03-water",
+          "type": "water",
+          "name": "Nước (10 m3 x 20.000 đ)",
+          "quantity": 10,
+          "unitPrice": 20000,
+          "amount": 200000
+        },
+        {
+          "id": "item-P03-garb",
+          "type": "garbage",
+          "name": "Rác vệ sinh",
+          "amount": 30000
+        },
+        {
+          "id": "item-P03-net",
+          "type": "internet",
+          "name": "Wifi Internet",
+          "amount": 50000
+        }
+      ],
+      "currentCycleTotal": 2060000,
+      "previousDebt": 0,
+      "appliedAdvance": 500000,
+      "paidAmount": 0,
+      "remainingBalance": 1560000,
+      "status": "locked",
+      "paymentStatus": "unpaid",
+      "version": 1
+    },
+    {
+      "id": "inv-P04-202610",
+      "invoiceCode": "HD-202610-P04",
+      "roomId": "room-P04",
+      "stayId": "stay-P04-01",
+      "periodMonth": "2026-10",
+      "utilityPeriodMonth": "2026-10",
+      "createdDate": "2026-10-06",
+      "dueDate": "2026-10-10",
+      "payerName": "Đỗ Thị Dung",
+      "items": [
+        {
+          "id": "item-P04-rent",
+          "type": "rent",
+          "name": "Tiền thuê phòng tháng 10/2026",
+          "amount": 1700000
+        },
+        {
+          "id": "item-P04-elec",
+          "type": "electricity",
+          "name": "Điện (80 kWh x 3.500 đ)",
+          "quantity": 80,
+          "unitPrice": 3500,
+          "amount": 280000
+        },
+        {
+          "id": "item-P04-water",
+          "type": "water",
+          "name": "Nước (10 m3 x 20.000 đ)",
+          "quantity": 10,
+          "unitPrice": 20000,
+          "amount": 200000
+        },
+        {
+          "id": "item-P04-garb",
+          "type": "garbage",
+          "name": "Rác vệ sinh",
+          "amount": 30000
+        },
+        {
+          "id": "item-P04-net",
+          "type": "internet",
+          "name": "Wifi Internet",
+          "amount": 50000
+        }
+      ],
+      "currentCycleTotal": 2260000,
+      "previousDebt": 0,
+      "appliedAdvance": 0,
+      "paidAmount": 2260000,
+      "remainingBalance": 0,
+      "status": "locked",
+      "paymentStatus": "paid",
+      "version": 1
+    },
+    {
+      "id": "inv-P05-202610",
+      "invoiceCode": "HD-202610-P05",
+      "roomId": "room-P05",
+      "stayId": "stay-P05-01",
+      "periodMonth": "2026-10",
+      "utilityPeriodMonth": "2026-10",
+      "createdDate": "2026-10-06",
+      "dueDate": "2026-10-10",
+      "payerName": "Vũ Tuấn Em",
+      "items": [
+        {
+          "id": "item-P05-rent",
+          "type": "rent",
+          "name": "Tiền thuê phòng tháng 10/2026",
+          "amount": 1900000
+        },
+        {
+          "id": "item-P05-elec",
+          "type": "electricity",
+          "name": "Điện (80 kWh x 3.500 đ)",
+          "quantity": 80,
+          "unitPrice": 3500,
+          "amount": 280000
+        },
+        {
+          "id": "item-P05-water",
+          "type": "water",
+          "name": "Nước (10 m3 x 20.000 đ)",
+          "quantity": 10,
+          "unitPrice": 20000,
+          "amount": 200000
+        },
+        {
+          "id": "item-P05-garb",
+          "type": "garbage",
+          "name": "Rác vệ sinh",
+          "amount": 30000
+        },
+        {
+          "id": "item-P05-net",
+          "type": "internet",
+          "name": "Wifi Internet",
+          "amount": 50000
+        }
+      ],
+      "currentCycleTotal": 2460000,
+      "previousDebt": 0,
+      "appliedAdvance": 0,
+      "paidAmount": 0,
+      "remainingBalance": 2460000,
+      "status": "locked",
+      "paymentStatus": "unpaid",
+      "version": 1
+    },
+    {
+      "id": "inv-P06-202610",
+      "invoiceCode": "HD-202610-P06",
+      "roomId": "room-P06",
+      "stayId": "stay-P06-01",
+      "periodMonth": "2026-10",
+      "utilityPeriodMonth": "2026-10",
+      "createdDate": "2026-10-06",
+      "dueDate": "2026-10-10",
+      "payerName": "Ngô Thị Phương",
+      "items": [
+        {
+          "id": "item-P06-rent",
+          "type": "rent",
+          "name": "Tiền thuê phòng tháng 10/2026",
+          "amount": 1500000
+        },
+        {
+          "id": "item-P06-elec",
+          "type": "electricity",
+          "name": "Điện (80 kWh x 3.500 đ)",
+          "quantity": 80,
+          "unitPrice": 3500,
+          "amount": 280000
+        },
+        {
+          "id": "item-P06-water",
+          "type": "water",
+          "name": "Nước (10 m3 x 20.000 đ)",
+          "quantity": 10,
+          "unitPrice": 20000,
+          "amount": 200000
+        },
+        {
+          "id": "item-P06-garb",
+          "type": "garbage",
+          "name": "Rác vệ sinh",
+          "amount": 30000
+        },
+        {
+          "id": "item-P06-net",
+          "type": "internet",
+          "name": "Wifi Internet",
+          "amount": 50000
+        }
+      ],
+      "currentCycleTotal": 2060000,
+      "previousDebt": 0,
+      "appliedAdvance": 0,
+      "paidAmount": 0,
+      "remainingBalance": 2060000,
+      "status": "locked",
+      "paymentStatus": "unpaid",
+      "version": 1
+    },
+    {
+      "id": "inv-P07-202610",
+      "invoiceCode": "HD-202610-P07",
+      "roomId": "room-P07",
+      "stayId": "stay-P07-01",
+      "periodMonth": "2026-10",
+      "utilityPeriodMonth": "2026-10",
+      "createdDate": "2026-10-06",
+      "dueDate": "2026-10-10",
+      "payerName": "Bùi Văn Giáp",
+      "items": [
+        {
+          "id": "item-P07-rent",
+          "type": "rent",
+          "name": "Tiền thuê phòng tháng 10/2026",
+          "amount": 1700000
+        },
+        {
+          "id": "item-P07-elec",
+          "type": "electricity",
+          "name": "Điện (80 kWh x 3.500 đ)",
+          "quantity": 80,
+          "unitPrice": 3500,
+          "amount": 280000
+        },
+        {
+          "id": "item-P07-water",
+          "type": "water",
+          "name": "Nước (10 m3 x 20.000 đ)",
+          "quantity": 10,
+          "unitPrice": 20000,
+          "amount": 200000
+        },
+        {
+          "id": "item-P07-garb",
+          "type": "garbage",
+          "name": "Rác vệ sinh",
+          "amount": 30000
+        },
+        {
+          "id": "item-P07-net",
+          "type": "internet",
+          "name": "Wifi Internet",
+          "amount": 50000
+        }
+      ],
+      "currentCycleTotal": 2260000,
+      "previousDebt": 0,
+      "appliedAdvance": 0,
+      "paidAmount": 0,
+      "remainingBalance": 2260000,
+      "status": "locked",
+      "paymentStatus": "unpaid",
+      "version": 1
+    },
+    {
+      "id": "inv-P08-202610",
+      "invoiceCode": "HD-202610-P08",
+      "roomId": "room-P08",
+      "stayId": "stay-P08-01",
+      "periodMonth": "2026-10",
+      "utilityPeriodMonth": "2026-10",
+      "createdDate": "2026-10-06",
+      "dueDate": "2026-10-10",
+      "payerName": "Đặng Hải Hà",
+      "items": [
+        {
+          "id": "item-P08-rent",
+          "type": "rent",
+          "name": "Tiền thuê phòng tháng 10/2026",
+          "amount": 1900000
+        },
+        {
+          "id": "item-P08-elec",
+          "type": "electricity",
+          "name": "Điện (80 kWh x 3.500 đ)",
+          "quantity": 80,
+          "unitPrice": 3500,
+          "amount": 280000
+        },
+        {
+          "id": "item-P08-water",
+          "type": "water",
+          "name": "Nước (10 m3 x 20.000 đ)",
+          "quantity": 10,
+          "unitPrice": 20000,
+          "amount": 200000
+        },
+        {
+          "id": "item-P08-garb",
+          "type": "garbage",
+          "name": "Rác vệ sinh",
+          "amount": 30000
+        },
+        {
+          "id": "item-P08-net",
+          "type": "internet",
+          "name": "Wifi Internet",
+          "amount": 50000
+        }
+      ],
+      "currentCycleTotal": 2460000,
+      "previousDebt": 0,
+      "appliedAdvance": 0,
+      "paidAmount": 0,
+      "remainingBalance": 2460000,
+      "status": "locked",
+      "paymentStatus": "unpaid",
+      "version": 1
+    }
+  ],
+  "payments": [
+    {
+      "id": "pay-P01-01",
+      "paymentCode": "PT-20261008-P01",
+      "roomId": "room-P01",
+      "stayId": "stay-P01-01",
+      "invoiceId": "inv-P01-202610",
+      "amount": 1000000,
+      "receivedAt": "2026-10-08T09:30:00.000Z",
+      "payerName": "Lê Văn An",
+      "receivedBy": "Nguyễn Văn Chủ",
+      "method": "transfer",
+      "bankTransactionRef": "MB-TX-883719",
+      "allocations": [
+        {
+          "invoiceId": "inv-P01-202610",
+          "period": "2026-10",
+          "amount": 1000000
+        }
+      ],
+      "unallocatedAmount": 0,
+      "isReconciled": true,
+      "status": "valid",
+      "notes": "Chuyển khoản cọc tiền đợt 1"
+    },
+    {
+      "id": "pay-P04-01",
+      "paymentCode": "PT-20261009-P04",
+      "roomId": "room-P04",
+      "stayId": "stay-P04-01",
+      "invoiceId": "inv-P04-202610",
+      "amount": 2260000,
+      "receivedAt": "2026-10-09T14:15:00.000Z",
+      "payerName": "Đỗ Thị Dung",
+      "receivedBy": "Nguyễn Văn Chủ",
+      "method": "transfer",
+      "bankTransactionRef": "VCB-992144",
+      "allocations": [
+        {
+          "invoiceId": "inv-P04-202610",
+          "period": "2026-10",
+          "amount": 2260000
+        }
+      ],
+      "unallocatedAmount": 0,
+      "isReconciled": true,
+      "status": "valid",
+      "notes": "Thanh toán tiền trọ đủ tháng 10"
+    }
+  ],
+  "depositTransactions": [
+    {
+      "id": "dep-P01-01",
+      "stayId": "stay-P01-01",
+      "roomId": "room-P01",
+      "type": "received",
+      "amount": 1700000,
+      "date": "2026-01-01",
+      "reason": "Tiền cọc ban đầu khi ký hợp đồng",
+      "recordedBy": "Nguyễn Văn Chủ"
+    },
+    {
+      "id": "dep-P02-01",
+      "stayId": "stay-P02-01",
+      "roomId": "room-P02",
+      "type": "received",
+      "amount": 1900000,
+      "date": "2026-01-01",
+      "reason": "Tiền cọc ban đầu khi ký hợp đồng",
+      "recordedBy": "Nguyễn Văn Chủ"
+    },
+    {
+      "id": "dep-P03-01",
+      "stayId": "stay-P03-01",
+      "roomId": "room-P03",
+      "type": "received",
+      "amount": 1500000,
+      "date": "2026-01-01",
+      "reason": "Tiền cọc ban đầu khi ký hợp đồng",
+      "recordedBy": "Nguyễn Văn Chủ"
+    },
+    {
+      "id": "dep-P04-01",
+      "stayId": "stay-P04-01",
+      "roomId": "room-P04",
+      "type": "received",
+      "amount": 1700000,
+      "date": "2026-01-01",
+      "reason": "Tiền cọc ban đầu khi ký hợp đồng",
+      "recordedBy": "Nguyễn Văn Chủ"
+    },
+    {
+      "id": "dep-P05-01",
+      "stayId": "stay-P05-01",
+      "roomId": "room-P05",
+      "type": "received",
+      "amount": 1900000,
+      "date": "2026-01-01",
+      "reason": "Tiền cọc ban đầu khi ký hợp đồng",
+      "recordedBy": "Nguyễn Văn Chủ"
+    },
+    {
+      "id": "dep-P06-01",
+      "stayId": "stay-P06-01",
+      "roomId": "room-P06",
+      "type": "received",
+      "amount": 1500000,
+      "date": "2026-01-01",
+      "reason": "Tiền cọc ban đầu khi ký hợp đồng",
+      "recordedBy": "Nguyễn Văn Chủ"
+    },
+    {
+      "id": "dep-P07-01",
+      "stayId": "stay-P07-01",
+      "roomId": "room-P07",
+      "type": "received",
+      "amount": 1700000,
+      "date": "2026-01-01",
+      "reason": "Tiền cọc ban đầu khi ký hợp đồng",
+      "recordedBy": "Nguyễn Văn Chủ"
+    },
+    {
+      "id": "dep-P08-01",
+      "stayId": "stay-P08-01",
+      "roomId": "room-P08",
+      "type": "received",
+      "amount": 1900000,
+      "date": "2026-01-01",
+      "reason": "Tiền cọc ban đầu khi ký hợp đồng",
+      "recordedBy": "Nguyễn Văn Chủ"
+    }
+  ],
+  "advanceBalances": [],
+  "expenses": [
+    {
+      "id": "exp-01",
+      "date": "2026-10-01",
+      "category": "internet_master",
+      "title": "Cước gói mạng cáp quang tổng khu trọ tháng 10",
+      "amount": 450000,
+      "paidBy": "Nguyễn Văn Chủ",
+      "notes": "Thanh toán Viettel 1Gbps"
+    },
+    {
+      "id": "exp-02",
+      "date": "2026-10-02",
+      "category": "repairs",
+      "title": "Thay bóng đèn Led hành lang dãy trọ",
+      "amount": 120000,
+      "paidBy": "Nguyễn Văn Chủ",
+      "notes": "Mua 2 bóng Philips"
+    }
+  ],
+  "maintenanceTickets": [
+    {
+      "id": "maint-01",
+      "roomId": "room-P02",
+      "tenantName": "Phạm Thị Bích",
+      "title": "Vòi sen bị rỉ nước",
+      "description": "Vòi sen phòng tắm nhỏ giọt liên tục từ hôm qua, nhờ chủ trọ kiểm tra giúp.",
+      "status": "pending",
+      "createdAt": "2026-10-11T08:00:00.000Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "user-landlord",
+      "username": "chutro",
+      "fullName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "phone": "0909123456",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "user-assistant",
+      "username": "hotro",
+      "fullName": "Trần Thị Thu (Người Hỗ Trợ Ghi Số)",
+      "role": "assistant",
+      "phone": "0908888999",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "user-tenant-p01",
+      "username": "khach_p01",
+      "fullName": "Lê Văn An (Người Thuê P01)",
+      "role": "tenant",
+      "phone": "0912345678",
+      "roomId": "room-P01",
+      "activeStayId": "stay-P01-01",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "user-tenant-p02",
+      "username": "khach_p02",
+      "fullName": "Phạm Thị Bích (Người Thuê P02)",
+      "role": "tenant",
+      "phone": "0933445566",
+      "roomId": "room-P02",
+      "activeStayId": "stay-P02-01",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "audit-1791992328848-3e1z",
+      "timestamp": "2026-10-14T15:38:48.848Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "RECORD_METER",
+      "targetType": "meter",
+      "targetId": "mr-P01-2026-10",
+      "description": "Ghi chỉ số điện nước tháng 2026-10 phòng Phòng 01: Điện 80 kWh, Nước 10 m3"
+    },
+    {
+      "id": "audit-1791992319653-8lis",
+      "timestamp": "2026-10-14T15:38:39.653Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "RECORD_METER",
+      "targetType": "meter",
+      "targetId": "mr-P01-2026-10",
+      "description": "Ghi chỉ số điện nước tháng 2026-10 phòng Phòng 01: Điện 80 kWh, Nước 10 m3"
+    },
+    {
+      "id": "audit-1791991275178-sdn9",
+      "timestamp": "2026-10-14T15:21:15.178Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "RECORD_METER",
+      "targetType": "meter",
+      "targetId": "mr-P01-2026-10",
+      "description": "Ghi chỉ số điện nước tháng 2026-10 phòng Phòng 01: Điện 80 kWh, Nước 10 m3"
+    },
+    {
+      "id": "audit-1791991149351-eboi",
+      "timestamp": "2026-10-14T15:19:09.351Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "RECORD_METER",
+      "targetType": "meter",
+      "targetId": "mr-P01-2026-10",
+      "description": "Ghi chỉ số điện nước tháng 2026-10 phòng Phòng 01: Điện 80 kWh, Nước 10 m3"
+    },
+    {
+      "id": "audit-1791990008207-wxh3",
+      "timestamp": "2026-10-14T15:00:08.207Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "GENERATE_INVOICES",
+      "targetType": "invoice",
+      "targetId": "period-2026-10",
+      "description": "Tạo/cập nhật bảng kê tính tiền tháng 2026-10 cho các phòng"
+    },
+    {
+      "id": "audit-1791990008107-twg4",
+      "timestamp": "2026-10-14T15:00:08.107Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "RECORD_METER",
+      "targetType": "meter",
+      "targetId": "mr-P01-2026-10",
+      "description": "Ghi chỉ số điện nước tháng 2026-10 phòng Phòng 01: Điện 80 kWh, Nước 10 m3"
+    },
+    {
+      "id": "audit-1791988637437-wl80",
+      "timestamp": "2026-10-14T14:37:17.437Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "GENERATE_INVOICES",
+      "targetType": "invoice",
+      "targetId": "period-2026-10",
+      "description": "Tạo/cập nhật bảng kê tính tiền tháng 2026-10 cho các phòng"
+    },
+    {
+      "id": "audit-1791988637350-csg8",
+      "timestamp": "2026-10-14T14:37:17.350Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "RECORD_METER",
+      "targetType": "meter",
+      "targetId": "mr-P01-2026-10",
+      "description": "Ghi chỉ số điện nước tháng 2026-10 phòng Phòng 01: Điện 80 kWh, Nước 10 m3"
+    },
+    {
+      "id": "audit-init",
+      "timestamp": "2026-10-14T12:40:47.474Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ",
+      "role": "landlord",
+      "action": "INITIALIZE_SYSTEM",
+      "targetType": "settings",
+      "targetId": "house-profile",
+      "description": "Khởi tạo hệ thống quản lý 9 phòng trọ (Môi trường vận hành)."
+    }
+  ],
+  "lastBackupDate": "2026-10-14T12:40:47.474Z",
+  "version": 20
+}

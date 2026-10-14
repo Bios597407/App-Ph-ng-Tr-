@@ -1,0 +1,6 @@
+{
+  "name": "TroXanh 9P - Quản Lý Thu Tiền Phòng Trọ",
+  "description": "Ứng dụng chuyên nghiệp quản lý và thu tiền 9 phòng trọ: tính tiền điện nước, theo dõi công nợ, xuất phiếu thu QR, nhắc tiền ngày 10 và bảo mật phân quyền.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
