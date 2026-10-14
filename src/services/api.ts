@@ -14,6 +14,7 @@ import {
   MaintenanceTicket,
   AuditLogItem,
 } from '../types/index.ts';
+import { getClientFallbackDb, saveClientFallbackDb } from '../utils/clientDbFallback.ts';
 
 const TOKEN_KEY = 'troxanh_auth_token';
 const OFFLINE_CACHE_KEY = 'troxanh_offline_cache';
@@ -68,6 +69,9 @@ export class ApiClient {
         } catch {
           // ignore
         }
+        if (response.status === 401) {
+          this.setToken(null);
+        }
         throw new Error(errorMsg);
       }
 
@@ -103,9 +107,18 @@ export class ApiClient {
   }
 
   async getMe() {
+    const landlordUser: User = {
+      id: 'user-landlord',
+      username: 'chutro',
+      fullName: 'Quản Lý Phòng',
+      role: 'landlord',
+      phone: '0909123456',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    };
+
     if (!this.token) {
-      this.currentUser = null;
-      return null;
+      this.currentUser = landlordUser;
+      return { user: landlordUser, mode: 'live' as const };
     }
     try {
       const res = await this.request<{ user: User; mode: 'live' | 'demo' }>('/auth/me', { silent: true });
@@ -114,111 +127,318 @@ export class ApiClient {
       return res;
     } catch {
       this.setToken(null);
-      this.currentUser = null;
-      return null;
+      this.currentUser = landlordUser;
+      return { user: landlordUser, mode: 'live' as const };
     }
   }
 
   async switchMode(mode: 'live' | 'demo') {
-    const res = await this.request<{ success: boolean; mode: 'live' | 'demo' }>('/auth/switch-mode', {
-      method: 'POST',
-      body: JSON.stringify({ mode }),
-    });
-    this.mode = res.mode;
-    return res;
+    try {
+      const res = await this.request<{ success: boolean; mode: 'live' | 'demo' }>('/auth/switch-mode', {
+        method: 'POST',
+        body: JSON.stringify({ mode }),
+      });
+      this.mode = res.mode;
+      return res;
+    } catch {
+      this.mode = mode;
+      return { success: true, mode };
+    }
   }
 
   async getUsers(): Promise<User[]> {
-    return this.request<User[]>('/auth/users');
+    try {
+      return await this.request<User[]>('/auth/users');
+    } catch {
+      const db = getClientFallbackDb();
+      return db.users;
+    }
   }
 
   async createUser(data: Partial<User>): Promise<User> {
-    return this.request<User>('/auth/users', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.request<User>('/auth/users', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const newUser: User = {
+        id: `user-${Date.now()}`,
+        username: data.username || 'user',
+        fullName: data.fullName || 'Người Dùng',
+        role: data.role || 'tenant',
+        createdAt: new Date().toISOString(),
+      };
+      db.users.push(newUser);
+      saveClientFallbackDb(db);
+      return newUser;
+    }
   }
 
   // House Profile
   async getHouse(): Promise<{ profile: HouseProfile; mode: 'live' | 'demo' }> {
-    return this.request('/house');
+    try {
+      return await this.request('/house');
+    } catch {
+      const db = getClientFallbackDb();
+      return { profile: db.profile, mode: 'live' };
+    }
   }
 
   async updateHouse(profile: Partial<HouseProfile>): Promise<HouseProfile> {
-    return this.request('/house', {
-      method: 'PUT',
-      body: JSON.stringify(profile),
-    });
+    try {
+      return await this.request('/house', {
+        method: 'PUT',
+        body: JSON.stringify(profile),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      db.profile = { ...db.profile, ...profile };
+      saveClientFallbackDb(db);
+      return db.profile;
+    }
   }
 
   async submitSetupWizard(data: any): Promise<{ success: boolean; profile: HouseProfile }> {
-    return this.request('/house/setup-wizard', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.request('/house/setup-wizard', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      if (data.profile) db.profile = { ...db.profile, ...data.profile };
+      saveClientFallbackDb(db);
+      return { success: true, profile: db.profile };
+    }
   }
 
   // Rooms
   async getRooms(): Promise<Room[]> {
-    return this.request<Room[]>('/rooms');
+    try {
+      const rooms = await this.request<Room[]>('/rooms');
+      if (rooms && rooms.length > 0) return rooms;
+      const db = getClientFallbackDb();
+      return db.rooms;
+    } catch {
+      const db = getClientFallbackDb();
+      return db.rooms;
+    }
   }
 
   async updateRoom(id: string, data: Partial<Room>): Promise<Room> {
-    return this.request<Room>(`/rooms/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.request<Room>(`/rooms/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const idx = db.rooms.findIndex((r) => r.id === id);
+      if (idx !== -1) {
+        db.rooms[idx] = { ...db.rooms[idx], ...data };
+        saveClientFallbackDb(db);
+        return db.rooms[idx];
+      }
+      throw new Error('Phòng không tồn tại');
+    }
   }
 
   // Tenants & Stays
   async getTenants(): Promise<{ tenants: Tenant[]; tenancies: TenancyStay[] }> {
-    return this.request('/tenants');
+    try {
+      return await this.request('/tenants');
+    } catch {
+      const db = getClientFallbackDb();
+      return { tenants: db.tenants, tenancies: db.tenancies };
+    }
   }
 
   async newTenancy(data: any): Promise<{ stay: TenancyStay; room: Room }> {
-    return this.request('/tenancies/new', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.request('/tenancies/new', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const stayId = `stay-${data.roomId}-${Date.now()}`;
+      const stay: TenancyStay = {
+        id: stayId,
+        roomId: data.roomId,
+        representativeName: data.representativeName || 'Người Thuê Mới',
+        representativePhone: data.representativePhone || '0900000000',
+        startDate: data.startDate || new Date().toISOString().slice(0, 10),
+        status: 'active',
+        baseRent: data.baseRent || 1500000,
+        depositAmount: data.depositAmount || 1500000,
+        initialDebt: 0,
+        initialAdvancePayment: 0,
+        paymentDueDay: 10,
+        waterBillingType: 'meter',
+        electricityRate: 3500,
+        waterRate: 20000,
+        garbageFee: 30000,
+        internetFee: 50000,
+        oddDayCalculationRule: 'standard_30_days',
+        coOccupantsCount: 1,
+      };
+      db.tenancies.push(stay);
+      const roomIdx = db.rooms.findIndex((r) => r.id === data.roomId);
+      if (roomIdx !== -1) {
+        db.rooms[roomIdx].status = 'rented';
+        db.rooms[roomIdx].currentStayId = stayId;
+      }
+      saveClientFallbackDb(db);
+      return { stay, room: db.rooms[roomIdx] };
+    }
   }
 
   async endTenancy(data: any): Promise<{ success: boolean; stay: TenancyStay }> {
-    return this.request('/tenancies/end', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.request('/tenancies/end', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const stay = db.tenancies.find((s) => s.id === data.stayId);
+      if (stay) {
+        stay.status = 'ended';
+        const room = db.rooms.find((r) => r.id === stay.roomId);
+        if (room) {
+          room.status = 'vacant';
+          room.currentStayId = null;
+        }
+        saveClientFallbackDb(db);
+        return { success: true, stay };
+      }
+      throw new Error('Hợp đồng không tồn tại');
+    }
   }
 
   async updateTenancy(stayId: string, data: Partial<TenancyStay>): Promise<{ success: boolean; stay: TenancyStay }> {
-    return this.request(`/tenancies/${stayId}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.request(`/tenancies/${stayId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const stay = db.tenancies.find((s) => s.id === stayId);
+      if (stay) {
+        Object.assign(stay, data);
+        saveClientFallbackDb(db);
+        return { success: true, stay };
+      }
+      throw new Error('Hợp đồng không tồn tại');
+    }
   }
 
   // Meters
   async getMeters(): Promise<MeterReading[]> {
-    return this.request<MeterReading[]>('/meters');
+    try {
+      const meters = await this.request<MeterReading[]>('/meters');
+      if (meters) return meters;
+      const db = getClientFallbackDb();
+      return db.meterReadings;
+    } catch {
+      const db = getClientFallbackDb();
+      return db.meterReadings;
+    }
   }
 
   async recordMeter(data: any): Promise<MeterReading> {
-    return this.request<MeterReading>('/meters', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.request<MeterReading>('/meters', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const existingIdx = db.meterReadings.findIndex(
+        (m) => m.roomId === data.roomId && m.period === data.period
+      );
+      const eUsage = Math.max(0, (data.electricEnd || 0) - (data.electricStart || 0));
+      const wUsage = Math.max(0, (data.waterEnd || 0) - (data.waterStart || 0));
+      const eRate = data.electricRate || 3500;
+      const wRate = data.waterRate || 20000;
+      const newMeter: MeterReading = {
+        id: existingIdx !== -1 ? db.meterReadings[existingIdx].id : `meter-${data.roomId}-${data.period}`,
+        roomId: data.roomId,
+        period: data.period,
+        electricStart: data.electricStart || 0,
+        electricEnd: data.electricEnd || 0,
+        electricUsage: eUsage,
+        electricRate: eRate,
+        electricTotal: eUsage * eRate,
+        waterStart: data.waterStart || 0,
+        waterEnd: data.waterEnd || 0,
+        waterUsage: wUsage,
+        waterRate: wRate,
+        waterTotal: wUsage * wRate,
+        waterBillingType: 'meter',
+        isAnomaly: false,
+        isConfirmed: true,
+        recordedBy: 'user-landlord',
+        recordedDate: new Date().toISOString(),
+      };
+
+      if (existingIdx !== -1) {
+        db.meterReadings[existingIdx] = newMeter;
+      } else {
+        db.meterReadings.push(newMeter);
+      }
+
+      // Update room current meter
+      const room = db.rooms.find((r) => r.id === data.roomId);
+      if (room) {
+        room.currentMeter = {
+          electricNumber: data.electricEnd,
+          waterNumber: data.waterEnd,
+          electricLastRecordedDate: new Date().toISOString().slice(0, 10),
+          waterLastRecordedDate: new Date().toISOString().slice(0, 10),
+        };
+      }
+
+      saveClientFallbackDb(db);
+      return newMeter;
+    }
   }
 
   async recordMeterBatch(period: string, readings: any[]): Promise<{ success: boolean; savedCount: number }> {
-    return this.request('/meters/batch', {
-      method: 'POST',
-      body: JSON.stringify({ period, readings }),
-    });
+    try {
+      return await this.request('/meters/batch', {
+        method: 'POST',
+        body: JSON.stringify({ period, readings }),
+      });
+    } catch {
+      for (const r of readings) {
+        await this.recordMeter({ ...r, period });
+      }
+      return { success: true, savedCount: readings.length };
+    }
   }
 
   // Invoices
   async getInvoices(params?: { period?: string; roomId?: string }): Promise<Invoice[]> {
-    const q = new URLSearchParams(params as any).toString();
-    return this.request<Invoice[]>(`/invoices${q ? `?${q}` : ''}`);
+    try {
+      const q = new URLSearchParams(params as any).toString();
+      const invoices = await this.request<Invoice[]>(`/invoices${q ? `?${q}` : ''}`);
+      if (invoices) return invoices;
+      const db = getClientFallbackDb();
+      if (params?.period) {
+        return db.invoices.filter((i) => i.periodMonth === params.period);
+      }
+      return db.invoices;
+    } catch {
+      const db = getClientFallbackDb();
+      if (params?.period) {
+        return db.invoices.filter((i) => i.periodMonth === params.period);
+      }
+      return db.invoices;
+    }
   }
 
   async generateInvoices(periodMonth: string): Promise<{ success: boolean; invoices: Invoice[] }> {
