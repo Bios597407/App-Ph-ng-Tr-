@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { createClient } from '@supabase/supabase-js';
 import {
   AppDatabase,
   HouseProfile,
@@ -17,6 +18,22 @@ import {
   AuditLogItem,
   PaymentAllocation
 } from '../types/index.ts';
+
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://cnxtpimhbcgffgacwlpa.supabase.co';
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_Mb_GZqoBwMk5CnjymwwXAA_66jTiNau';
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function syncStateToSupabase(db: AppDatabase, mode: string) {
+  try {
+    const key = `app_state_${mode}`;
+    await supabase
+      .from('troxanh_state')
+      .upsert({ id: key, data: db, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+  } catch {
+    // Ignore if table troxanh_state is not created yet
+  }
+}
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const BACKUPS_DIR = path.resolve(DATA_DIR, 'backups');
@@ -463,6 +480,9 @@ export function saveDatabase(db: AppDatabase, mode = currentEnvMode): void {
   fs.writeFileSync(tempPath, serialized, 'utf-8');
   fs.renameSync(tempPath, filePath);
   activeDb = db;
+
+  // Background sync to Supabase Cloud
+  syncStateToSupabase(db, mode);
 }
 
 export function createAutomaticBackup(db: AppDatabase, label = 'auto'): string {
