@@ -107,8 +107,8 @@ export const RoomSpreadsheetView: React.FC<RoomSpreadsheetViewProps> = ({
     try {
       const room = rooms.find((r) => r.id === roomId);
       const activeRate = room?.priceHistory?.[0];
-      const eRate = activeRate?.electricityRate ?? 3500;
-      const wRate = activeRate?.waterRate ?? 15000;
+      const eRate = activeRate?.electricityRate && activeRate.electricityRate !== 3500 ? activeRate.electricityRate : 5000;
+      const wRate = activeRate?.waterRate && activeRate.waterRate !== 20000 && activeRate.waterRate !== 15000 ? activeRate.waterRate : 4000;
 
       await api.recordMeter({
         roomId,
@@ -244,8 +244,8 @@ export const RoomSpreadsheetView: React.FC<RoomSpreadsheetViewProps> = ({
                   : rowData.waterEnd;
 
               const activeRate = room.priceHistory?.[0];
-              const eRate = activeRate?.electricityRate ?? 3500;
-              const wRate = activeRate?.waterRate ?? 15000;
+              const eRate = activeRate?.electricityRate && activeRate.electricityRate !== 3500 ? activeRate.electricityRate : 5000;
+              const wRate = activeRate?.waterRate && activeRate.waterRate !== 20000 && activeRate.waterRate !== 15000 ? activeRate.waterRate : 4000;
 
               const eTotalCost = eUsage * eRate;
               const wTotalCost = wUsage * wRate;

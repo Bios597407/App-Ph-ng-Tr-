@@ -36,11 +36,11 @@ export function getDefaultHouseProfile(): HouseProfile {
     ownerEmail: 'chutro@anbinh.vn',
     defaultDueDay: 10,
     defaultCutoffDay: 5,
-    electricityDefaultRate: 3500,
-    waterDefaultRate: 20000,
+    electricityDefaultRate: 5000,
+    waterDefaultRate: 4000,
     waterDefaultType: 'meter',
-    internetDefaultFee: 50000,
-    garbageDefaultFee: 30000,
+    internetDefaultFee: 0,
+    garbageDefaultFee: 0,
     bankAccount: {
       bankId: 'MB',
       bankName: 'MBBank - Ngân hàng Quân Đội',
@@ -79,11 +79,11 @@ export function generateInitialRooms(): Room[] {
           id: `ph-${code}-01`,
           effectiveDate: '2026-01-01',
           baseRent: rent,
-          electricityRate: 3500,
-          waterRate: 20000,
+          electricityRate: 5000,
+          waterRate: 4000,
           waterBillingType: 'meter',
-          internetFee: 50000,
-          wasteFee: 30000,
+          internetFee: 0,
+          wasteFee: 0,
         },
       ],
       currentMeter: {
@@ -145,10 +145,10 @@ export function buildFullInitialDatabase(): AppDatabase {
       initialAdvancePayment: i === 3 ? 500000 : 0,
       paymentDueDay: 10,
       waterBillingType: 'meter',
-      electricityRate: 3500,
-      waterRate: 20000,
-      garbageFee: 30000,
-      internetFee: 50000,
+      electricityRate: 5000,
+      waterRate: 4000,
+      garbageFee: 0,
+      internetFee: 0,
       oddDayCalculationRule: 'standard_30_days',
       coOccupantsCount: 2,
       contractNotes: 'Hợp đồng thuê 1 năm từ 01/01/2026',
@@ -172,8 +172,8 @@ export function buildFullInitialDatabase(): AppDatabase {
     const wStart = wEnd - 10;
     const eUsage = 80;
     const wUsage = 10;
-    const eRate = 3500;
-    const wRate = 20000;
+    const eRate = 5000;
+    const wRate = 4000;
     const eTotal = eUsage * eRate;
     const wTotal = wUsage * wRate;
 
@@ -207,30 +207,30 @@ export function buildFullInitialDatabase(): AppDatabase {
     const elecItem = {
       id: `item-${code}-elec`,
       type: 'electricity' as const,
-      name: `Điện (${eUsage} kWh x 3.500 đ)`,
+      name: `Điện (${eUsage} kWh x 5.000 đ)`,
       quantity: eUsage,
-      unitPrice: 3500,
+      unitPrice: 5000,
       amount: eTotal,
     };
     const waterItem = {
       id: `item-${code}-water`,
       type: 'water' as const,
-      name: `Nước (${wUsage} m³ x 20.000 đ)`,
+      name: `Nước (${wUsage} m³ x 4.000 đ)`,
       quantity: wUsage,
-      unitPrice: 20000,
+      unitPrice: 4000,
       amount: wTotal,
     };
     const garbageItem = {
       id: `item-${code}-garb`,
       type: 'garbage' as const,
       name: 'Rác vệ sinh',
-      amount: 30000,
+      amount: 0,
     };
     const netItem = {
       id: `item-${code}-net`,
       type: 'internet' as const,
       name: 'Wifi Internet',
-      amount: 50000,
+      amount: 0,
     };
 
     const currentCycleTotal = rentItem.amount + elecItem.amount + waterItem.amount + garbageItem.amount + netItem.amount;
@@ -375,6 +375,75 @@ export function getClientFallbackDb(): AppDatabase {
           return fresh;
         }
 
+        // Migrate rates if from earlier versions
+        let modified = false;
+        if (parsed.profile) {
+          if (parsed.profile.electricityDefaultRate === 3500) {
+            parsed.profile.electricityDefaultRate = 5000;
+            modified = true;
+          }
+          if (parsed.profile.waterDefaultRate === 20000) {
+            parsed.profile.waterDefaultRate = 4000;
+            modified = true;
+          }
+          if (parsed.profile.garbageDefaultFee === 30000) {
+            parsed.profile.garbageDefaultFee = 0;
+            modified = true;
+          }
+          if (parsed.profile.internetDefaultFee === 50000) {
+            parsed.profile.internetDefaultFee = 0;
+            modified = true;
+          }
+        }
+
+        if (Array.isArray(parsed.rooms)) {
+          parsed.rooms.forEach((r: any) => {
+            if (r.priceHistory && r.priceHistory[0]) {
+              if (r.priceHistory[0].electricityRate === 3500) {
+                r.priceHistory[0].electricityRate = 5000;
+                modified = true;
+              }
+              if (r.priceHistory[0].waterRate === 20000) {
+                r.priceHistory[0].waterRate = 4000;
+                modified = true;
+              }
+              if (r.priceHistory[0].wasteFee === 30000) {
+                r.priceHistory[0].wasteFee = 0;
+                modified = true;
+              }
+              if (r.priceHistory[0].internetFee === 50000) {
+                r.priceHistory[0].internetFee = 0;
+                modified = true;
+              }
+            }
+          });
+        }
+
+        if (Array.isArray(parsed.tenancies)) {
+          parsed.tenancies.forEach((t: any) => {
+            if (t.electricityRate === 3500) {
+              t.electricityRate = 5000;
+              modified = true;
+            }
+            if (t.waterRate === 20000) {
+              t.waterRate = 4000;
+              modified = true;
+            }
+            if (t.garbageFee === 30000) {
+              t.garbageFee = 0;
+              modified = true;
+            }
+            if (t.internetFee === 50000) {
+              t.internetFee = 0;
+              modified = true;
+            }
+          });
+        }
+
+        if (modified) {
+          saveClientFallbackDb(parsed);
+        }
+
         return parsed;
       }
     }
@@ -429,10 +498,10 @@ export function rollForwardPeriodClient(db: AppDatabase, currentPeriod: string):
   const updatedInvoices = [...db.invoices];
 
   const profile = db.profile || getDefaultHouseProfile();
-  const eRateDefault = profile.electricityDefaultRate ?? 3500;
-  const wRateDefault = profile.waterDefaultRate ?? 20000;
-  const garbDefault = profile.garbageDefaultFee ?? 30000;
-  const netDefault = profile.internetDefaultFee ?? 50000;
+  const eRateDefault = profile.electricityDefaultRate ?? 5000;
+  const wRateDefault = profile.waterDefaultRate ?? 4000;
+  const garbDefault = profile.garbageDefaultFee ?? 0;
+  const netDefault = profile.internetDefaultFee ?? 0;
 
   for (const room of updatedRooms) {
     if (room.status === 'rented') {
@@ -583,6 +652,8 @@ export interface RoomBillingUpdatePayload {
   garbageFee: number;
   internetFee: number;
   otherFee?: number;
+  tenantName?: string;
+  tenantPhone?: string;
 }
 
 /**
@@ -596,6 +667,7 @@ export function updateRoomBillingClient(
   const updatedRooms = [...db.rooms];
   const updatedMeters = [...db.meterReadings];
   const updatedInvoices = [...db.invoices];
+  const updatedTenancies = [...(db.tenancies || [])];
 
   const roomIdx = updatedRooms.findIndex((r) => r.id === payload.roomId);
   if (roomIdx === -1) {
@@ -610,7 +682,26 @@ export function updateRoomBillingClient(
     electricLastRecordedDate: new Date().toISOString().slice(0, 10),
     waterLastRecordedDate: new Date().toISOString().slice(0, 10),
   };
+  if (room.priceHistory && room.priceHistory.length > 0) {
+    room.priceHistory[0].electricityRate = payload.electricRate;
+    room.priceHistory[0].waterRate = payload.waterRate;
+    room.priceHistory[0].baseRent = payload.roomRent;
+  }
   updatedRooms[roomIdx] = room;
+
+  // Update Tenancy Stay if tenantName / tenantPhone or fees provided
+  let stay = updatedTenancies.find((s) => s.id === room.currentStayId);
+  if (stay) {
+    if (payload.tenantName !== undefined && payload.tenantName.trim()) {
+      stay.representativeName = payload.tenantName.trim();
+    }
+    if (payload.tenantPhone !== undefined && payload.tenantPhone.trim()) {
+      stay.representativePhone = payload.tenantPhone.trim();
+    }
+    stay.baseRent = payload.roomRent;
+    stay.garbageFee = payload.garbageFee;
+    stay.internetFee = payload.internetFee;
+  }
 
   // Meter calculations
   const eUsage = Math.max(0, payload.electricEnd - payload.electricStart);
@@ -657,9 +748,12 @@ export function updateRoomBillingClient(
   );
   const existingInv = invIdx !== -1 ? updatedInvoices[invIdx] : null;
 
-  const stay = (db.tenancies || []).find((s) => s.id === room.currentStayId);
   const tenantMeta = VIETNAMESE_TENANT_NAMES[code];
-  const repName = stay?.representativeName || tenantMeta?.name || `Phòng ${code}`;
+  const repName =
+    (payload.tenantName && payload.tenantName.trim()) ||
+    stay?.representativeName ||
+    tenantMeta?.name ||
+    `Phòng ${code}`;
 
   const items: InvoiceItem[] = [
     {
@@ -688,13 +782,13 @@ export function updateRoomBillingClient(
       id: `item-${code}-garb-${payload.periodMonth}`,
       type: 'garbage' as const,
       name: 'Rác vệ sinh',
-      amount: payload.garbageFee,
+      amount: payload.garbageFee || 0,
     },
     {
       id: `item-${code}-net-${payload.periodMonth}`,
       type: 'internet' as const,
       name: 'Wifi Internet',
-      amount: payload.internetFee,
+      amount: payload.internetFee || 0,
     },
   ];
 
@@ -744,6 +838,7 @@ export function updateRoomBillingClient(
     rooms: updatedRooms,
     meterReadings: updatedMeters,
     invoices: updatedInvoices,
+    tenancies: updatedTenancies,
     version: (db.version || 1) + 1,
     lastBackupDate: new Date().toISOString(),
   };

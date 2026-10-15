@@ -209,13 +209,21 @@ apiRouter.put('/house', authenticateUser, requireRole('landlord'), (req, res) =>
   res.json(db.profile);
 });
 
-apiRouter.post('/house/setup-wizard', authenticateUser, requireRole('landlord'), (req, res) => {
+apiRouter.post('/house/setup-wizard', authenticateUser, (req, res) => {
   const { profile, rooms, tenancies, initialBalances } = req.body;
   const db = getDb();
-  const actor = (req as any).user;
+  const actor = (req as any).user || { id: 'u_chutro', fullName: 'Chủ Trọ Xanh', role: 'landlord' };
 
   if (profile) {
     db.profile = { ...db.profile, ...profile, isInitialSetupCompleted: true };
+    if (profile.electricityDefaultRate || profile.waterDefaultRate) {
+      db.rooms.forEach((r) => {
+        if (r.priceHistory && r.priceHistory[0]) {
+          if (profile.electricityDefaultRate) r.priceHistory[0].electricityRate = profile.electricityDefaultRate;
+          if (profile.waterDefaultRate) r.priceHistory[0].waterRate = profile.waterDefaultRate;
+        }
+      });
+    }
   }
   if (rooms && Array.isArray(rooms)) {
     db.rooms = rooms;
@@ -227,7 +235,7 @@ apiRouter.post('/house/setup-wizard', authenticateUser, requireRole('landlord'),
     'COMPLETE_SETUP_WIZARD',
     'settings',
     'house-profile',
-    'Hoàn tất thiết lập ban đầu khu trọ 9 phòng'
+    'Cập nhật cài đặt ngân hàng, đơn giá & khu trọ'
   );
   persistDb(db);
   res.json({ success: true, profile: db.profile });
@@ -650,6 +658,219 @@ apiRouter.post('/meters/batch', authenticateUser, requireRole('landlord', 'assis
 
   persistDb(db);
   res.json({ success: true, savedCount: savedReadings.length, readings: savedReadings });
+});
+
+// Single-point billing adjustment (electricity, water, services, rent)
+apiRouter.post('/meters/billing-update', authenticateUser, (req, res) => {
+  const {
+    roomId,
+    periodMonth,
+    roomRent,
+    electricStart,
+    electricEnd,
+    electricRate,
+    waterStart,
+    waterEnd,
+    waterRate,
+    garbageFee,
+    internetFee,
+    otherFee = 0,
+    tenantName,
+    tenantPhone,
+  } = req.body;
+
+  const db = getDb();
+  const actor = (req as any).user || { id: 'u_chutro', fullName: 'Chủ Trọ Xanh', role: 'landlord' };
+
+  const room = db.rooms.find((r) => r.id === roomId);
+  if (!room) {
+    return res.status(404).json({ error: 'Không tìm thấy phòng tương ứng' });
+  }
+
+  // 1. Update room rent & meter readings snapshot
+  const parsedRent = Number(roomRent) >= 0 ? Number(roomRent) : room.currentRent;
+  const parsedEStart = Number(electricStart) >= 0 ? Number(electricStart) : 0;
+  const parsedEEnd = Number(electricEnd) >= 0 ? Number(electricEnd) : parsedEStart;
+  const parsedERate = Number(electricRate) > 0 ? (Number(electricRate) <= 100 ? Number(electricRate) * 1000 : Number(electricRate)) : 5000;
+
+  const parsedWStart = Number(waterStart) >= 0 ? Number(waterStart) : 0;
+  const parsedWEnd = Number(waterEnd) >= 0 ? Number(waterEnd) : parsedWStart;
+  const parsedWRate = Number(waterRate) > 0 ? (Number(waterRate) <= 100 ? Number(waterRate) * 1000 : Number(waterRate)) : 4000;
+
+  const parsedGarbage = Number(garbageFee) >= 0 ? Number(garbageFee) : 0;
+  const parsedInternet = Number(internetFee) >= 0 ? Number(internetFee) : 0;
+  const parsedOther = Number(otherFee) >= 0 ? Number(otherFee) : 0;
+
+  room.currentRent = parsedRent;
+  room.currentMeter = {
+    electricNumber: parsedEEnd,
+    waterNumber: parsedWEnd,
+    electricLastRecordedDate: new Date().toISOString().slice(0, 10),
+    waterLastRecordedDate: new Date().toISOString().slice(0, 10),
+  };
+
+  if (room.priceHistory && room.priceHistory.length > 0) {
+    room.priceHistory[0].electricityRate = parsedERate;
+    room.priceHistory[0].waterRate = parsedWRate;
+    room.priceHistory[0].baseRent = parsedRent;
+  }
+
+  // Update active stay info and fees if present
+  const activeStay = db.tenancies?.find((s) => s.id === room.currentStayId);
+  if (activeStay) {
+    if (tenantName !== undefined && String(tenantName).trim()) {
+      activeStay.representativeName = String(tenantName).trim();
+    }
+    if (tenantPhone !== undefined && String(tenantPhone).trim()) {
+      activeStay.representativePhone = String(tenantPhone).trim();
+    }
+    activeStay.baseRent = parsedRent;
+    activeStay.garbageFee = parsedGarbage;
+    activeStay.internetFee = parsedInternet;
+  }
+
+  // 2. Upsert meter reading for period
+  const eUsage = Math.max(0, parsedEEnd - parsedEStart);
+  const wUsage = Math.max(0, parsedWEnd - parsedWStart);
+  const eTotal = eUsage * parsedERate;
+  const wTotal = wUsage * parsedWRate;
+
+  let meter = db.meterReadings.find((m) => m.roomId === roomId && m.period === periodMonth);
+  if (meter) {
+    meter.electricStart = parsedEStart;
+    meter.electricEnd = parsedEEnd;
+    meter.electricUsage = eUsage;
+    meter.electricRate = parsedERate;
+    meter.electricTotal = eTotal;
+    meter.waterStart = parsedWStart;
+    meter.waterEnd = parsedWEnd;
+    meter.waterUsage = wUsage;
+    meter.waterRate = parsedWRate;
+    meter.waterTotal = wTotal;
+    meter.isConfirmed = true;
+    meter.recordedDate = new Date().toISOString().slice(0, 10);
+    meter.recordedBy = actor.fullName || 'Chủ trọ';
+  } else {
+    meter = {
+      id: `mr-${room.code}-${periodMonth}`,
+      roomId,
+      period: periodMonth,
+      recordedDate: new Date().toISOString().slice(0, 10),
+      recordedBy: actor.fullName || 'Chủ trọ',
+      electricStart,
+      electricEnd,
+      electricUsage: eUsage,
+      electricRate: parsedERate,
+      electricTotal: eTotal,
+      waterStart,
+      waterEnd,
+      waterUsage: wUsage,
+      waterRate: parsedWRate,
+      waterTotal: wTotal,
+      waterBillingType: 'meter',
+      isAnomaly: false,
+      isConfirmed: true,
+    };
+    db.meterReadings.push(meter);
+  }
+
+  // 3. Upsert invoice
+  const [y, m] = periodMonth.split('-');
+  const repName =
+    (tenantName && String(tenantName).trim()) ||
+    activeStay?.representativeName ||
+    `Khách thuê ${room.code}`;
+
+  const items: InvoiceItem[] = [
+    {
+      id: `it-rent-${room.code}-${periodMonth}`,
+      type: 'rent',
+      name: `Tiền thuê phòng tháng ${m}/${y}`,
+      amount: parsedRent,
+    },
+    {
+      id: `it-elec-${room.code}-${periodMonth}`,
+      type: 'electricity',
+      name: `Điện (${eUsage} kWh x ${parsedERate.toLocaleString('vi-VN')} đ)`,
+      quantity: eUsage,
+      unitPrice: parsedERate,
+      amount: eTotal,
+    },
+    {
+      id: `it-water-${room.code}-${periodMonth}`,
+      type: 'water',
+      name: `Nước (${wUsage} m³ x ${parsedWRate.toLocaleString('vi-VN')} đ)`,
+      quantity: wUsage,
+      unitPrice: parsedWRate,
+      amount: wTotal,
+    },
+    {
+      id: `it-garb-${room.code}-${periodMonth}`,
+      type: 'garbage',
+      name: 'Rác vệ sinh',
+      amount: parsedGarbage,
+    },
+    {
+      id: `it-net-${room.code}-${periodMonth}`,
+      type: 'internet',
+      name: 'Wifi Internet',
+      amount: parsedInternet,
+    },
+  ];
+
+  if (parsedOther > 0) {
+    items.push({
+      id: `it-other-${room.code}-${periodMonth}`,
+      type: 'other',
+      name: 'Phụ phí / Điều chỉnh',
+      amount: parsedOther,
+    });
+  }
+
+  const currentCycleTotal = items.reduce((s, it) => s + it.amount, 0);
+
+  let inv: Invoice | undefined = db.invoices.find((i) => i.roomId === roomId && i.periodMonth === periodMonth);
+  if (inv) {
+    inv.items = items;
+    inv.currentCycleTotal = currentCycleTotal;
+    inv.remainingBalance = Math.max(0, currentCycleTotal + (inv.previousDebt || 0) - (inv.paidAmount || 0) - (inv.appliedAdvance || 0));
+    inv.paymentStatus = inv.remainingBalance <= 0 ? 'paid' : (inv.paidAmount > 0 ? 'partial' : 'unpaid');
+    inv.payerName = repName;
+    inv.version = (inv.version || 1) + 1;
+  } else {
+    const newInv: Invoice = {
+      id: `inv-${room.code}-${periodMonth.replace('-', '')}`,
+      invoiceCode: `HD-${periodMonth.replace('-', '')}-${room.code}`,
+      roomId,
+      stayId: room.currentStayId || `stay-${room.code}-01`,
+      periodMonth,
+      status: 'draft',
+      paymentStatus: 'unpaid',
+      createdDate: new Date().toISOString().slice(0, 10),
+      dueDate: `${y}-${m}-10`,
+      items,
+      currentCycleTotal,
+      previousDebt: 0,
+      appliedAdvance: 0,
+      paidAmount: 0,
+      remainingBalance: currentCycleTotal,
+      payerName: repName,
+      version: 1,
+    };
+    db.invoices.push(newInv);
+    inv = newInv;
+  }
+
+  addAuditLog(
+    { id: actor.id, name: actor.fullName, role: actor.role },
+    'UPDATE_ROOM_BILLING',
+    'invoice',
+    roomId,
+    `Điều chỉnh kỳ thu phòng ${room.code} (${periodMonth}): Tiền phòng ${parsedRent.toLocaleString('vi-VN')}đ, Điện ${eUsage} kWh, Nước ${wUsage} m³, Tổng ${currentCycleTotal.toLocaleString('vi-VN')}đ`
+  );
+
+  persistDb(db);
+  res.json({ success: true, meter, invoice: inv, room });
 });
 
 // ================= INVOICES =================

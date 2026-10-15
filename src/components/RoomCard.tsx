@@ -57,10 +57,10 @@ export const RoomCard: React.FC<RoomCardProps> = ({
 
   // Unit Rates
   const activeRate = room.priceHistory && room.priceHistory.length > 0 ? room.priceHistory[0] : null;
-  const rawERate = meterReading?.electricRate ?? (activeRate?.electricityRate ?? 3500);
+  const rawERate = meterReading?.electricRate ?? (activeRate?.electricityRate ?? 5000);
   const eRate = rawERate <= 100 ? rawERate * 1000 : rawERate;
 
-  const rawWRate = meterReading?.waterRate ?? (activeRate?.waterRate ?? 20000);
+  const rawWRate = meterReading?.waterRate ?? (activeRate?.waterRate ?? 4000);
   const wRate = rawWRate <= 100 ? rawWRate * 1000 : rawWRate;
 
   // Usage and Costs
@@ -72,12 +72,12 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   const wUsage = isWaterInvalid ? 0 : numWEnd - numWStart;
   const wTotalCost = wUsage * wRate;
 
-  // Service Fees & Adjustments
+  // Service Fees & Adjustments (Starts from 0)
   const otherFeesNum = currentInvoice
     ? currentInvoice.items
         .filter((it) => ['garbage', 'internet', 'other', 'debt_adjustment'].includes(it.type))
         .reduce((sum, it) => sum + it.amount, 0)
-    : 80000;
+    : 0;
 
   // Exact Transparent Sum
   const calculatedTotal = room.currentRent + eTotalCost + wTotalCost + otherFeesNum;
@@ -211,17 +211,24 @@ export const RoomCard: React.FC<RoomCardProps> = ({
           </div>
         )}
 
-        {/* METER READINGS OVERVIEW DISPLAY (READ-ONLY ON CARD) */}
+        {/* METER READINGS OVERVIEW DISPLAY (CLICKABLE TO OPEN ADJUSTMENT DIALOG) */}
         {isRented && (
           <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
             {/* Electricity Summary Box */}
-            <div className="rounded-xl p-2.5 border bg-amber-50/60 border-amber-200/80 space-y-1">
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenDialog();
+              }}
+              className="rounded-xl p-2.5 border bg-amber-50/60 hover:bg-amber-100/90 border-amber-200/80 hover:border-amber-300 space-y-1 cursor-pointer transition-all hover:shadow-2xs group/elec"
+              title="Chạm để điều chỉnh chỉ số và đơn giá Điện"
+            >
               <div className="flex items-center justify-between gap-1">
                 <span className="font-black text-amber-950 flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
                   <Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
                   <span className="whitespace-nowrap">Điện ({Math.round(eRate / 1000)}k)</span>
                 </span>
-                <span className="font-mono font-extrabold text-amber-900 bg-amber-100/90 px-1.5 py-0.5 rounded text-xs tabular-nums whitespace-nowrap shrink-0">
+                <span className="font-mono font-extrabold text-amber-900 bg-amber-100/90 px-1.5 py-0.5 rounded text-xs tabular-nums whitespace-nowrap shrink-0 group-hover/elec:bg-amber-200/90">
                   {eUsage} kWh
                 </span>
               </div>
@@ -238,13 +245,20 @@ export const RoomCard: React.FC<RoomCardProps> = ({
             </div>
 
             {/* Water Summary Box */}
-            <div className="rounded-xl p-2.5 border bg-sky-50/60 border-sky-200/80 space-y-1">
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenDialog();
+              }}
+              className="rounded-xl p-2.5 border bg-sky-50/60 hover:bg-sky-100/90 border-sky-200/80 hover:border-sky-300 space-y-1 cursor-pointer transition-all hover:shadow-2xs group/water"
+              title="Chạm để điều chỉnh chỉ số và đơn giá Nước"
+            >
               <div className="flex items-center justify-between gap-1">
                 <span className="font-black text-sky-950 flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
                   <Droplet className="w-4 h-4 text-sky-500 fill-sky-500 shrink-0" />
                   <span className="whitespace-nowrap">Nước ({Math.round(wRate / 1000)}k)</span>
                 </span>
-                <span className="font-mono font-extrabold text-sky-900 bg-sky-100/90 px-1.5 py-0.5 rounded text-xs tabular-nums whitespace-nowrap shrink-0">
+                <span className="font-mono font-extrabold text-sky-900 bg-sky-100/90 px-1.5 py-0.5 rounded text-xs tabular-nums whitespace-nowrap shrink-0 group-hover/water:bg-sky-200/90">
                   {wUsage} m³
                 </span>
               </div>
@@ -262,9 +276,16 @@ export const RoomCard: React.FC<RoomCardProps> = ({
           </div>
         )}
 
-        {/* SERVICE FEES / ADJUSTMENTS ROW (READ-ONLY ON CARD) */}
+        {/* SERVICE FEES / ADJUSTMENTS ROW */}
         {isRented && (
-          <div className="bg-slate-50/80 p-2 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenDialog();
+            }}
+            className="bg-slate-50/80 hover:bg-slate-100 p-2 rounded-xl border border-slate-200/80 hover:border-indigo-300 flex items-center justify-between text-xs cursor-pointer transition-all hover:shadow-2xs"
+            title="Chạm để điều chỉnh phí dịch vụ và phụ phí"
+          >
             <span className="text-slate-600 font-bold truncate">
               Phí dịch vụ (Rác, Wifi, Khác...):
             </span>

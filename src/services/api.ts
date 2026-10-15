@@ -208,10 +208,14 @@ export class ApiClient {
 
   async submitSetupWizard(data: any): Promise<{ success: boolean; profile: HouseProfile }> {
     try {
-      return await this.request('/house/setup-wizard', {
+      const res = await this.request<{ success: boolean; profile: HouseProfile }>('/house/setup-wizard', {
         method: 'POST',
         body: JSON.stringify(data),
       });
+      const db = getClientFallbackDb();
+      if (data.profile) db.profile = { ...db.profile, ...data.profile };
+      saveClientFallbackDb(db);
+      return res;
     } catch {
       const db = getClientFallbackDb();
       if (data.profile) db.profile = { ...db.profile, ...data.profile };
@@ -235,10 +239,17 @@ export class ApiClient {
 
   async updateRoom(id: string, data: Partial<Room>): Promise<Room> {
     try {
-      return await this.request<Room>(`/rooms/${id}`, {
+      const room = await this.request<Room>(`/rooms/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       });
+      const db = getClientFallbackDb();
+      const idx = db.rooms.findIndex((r) => r.id === id);
+      if (idx !== -1) {
+        db.rooms[idx] = { ...db.rooms[idx], ...data, ...(room || {}) };
+        saveClientFallbackDb(db);
+      }
+      return room;
     } catch {
       const db = getClientFallbackDb();
       const idx = db.rooms.findIndex((r) => r.id === id);
@@ -326,10 +337,17 @@ export class ApiClient {
 
   async updateTenancy(stayId: string, data: Partial<TenancyStay>): Promise<{ success: boolean; stay: TenancyStay }> {
     try {
-      return await this.request(`/tenancies/${stayId}`, {
+      const res = await this.request<{ success: boolean; stay: TenancyStay }>(`/tenancies/${stayId}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       });
+      const db = getClientFallbackDb();
+      const stay = db.tenancies.find((s) => s.id === stayId);
+      if (stay) {
+        Object.assign(stay, data);
+        saveClientFallbackDb(db);
+      }
+      return res;
     } catch {
       const db = getClientFallbackDb();
       const stay = db.tenancies.find((s) => s.id === stayId);
@@ -434,10 +452,10 @@ export class ApiClient {
         body: JSON.stringify(payload),
         silent: true,
       });
-      if (res && res.meter) return res;
+      // Always keep local storage updated in sync
       const db = getClientFallbackDb();
       const updated = updateRoomBillingClient(db, payload);
-      return { success: true, meter: updated.meter, invoice: updated.invoice };
+      return res && res.meter ? res : { success: true, meter: updated.meter, invoice: updated.invoice };
     } catch {
       const db = getClientFallbackDb();
       const updated = updateRoomBillingClient(db, payload);

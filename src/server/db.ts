@@ -60,11 +60,11 @@ export function getDefaultHouseProfile(): HouseProfile {
     ownerEmail: 'quanly@anbinh.vn',
     defaultDueDay: 10,
     defaultCutoffDay: 5,
-    electricityDefaultRate: 3500,
-    waterDefaultRate: 20000,
+    electricityDefaultRate: 5000,
+    waterDefaultRate: 4000,
     waterDefaultType: 'meter',
-    internetDefaultFee: 50000,
-    garbageDefaultFee: 30000,
+    internetDefaultFee: 0,
+    garbageDefaultFee: 0,
     bankAccount: {
       bankId: 'MB',
       bankName: 'MBBank - Ngân hàng Quân Đội',
@@ -98,11 +98,11 @@ export function generateInitialRooms(): Room[] {
           id: `ph-${code}-01`,
           effectiveDate: '2026-01-01',
           baseRent: 1500000 + (i % 3) * 200000,
-          electricityRate: 3500,
-          waterRate: 20000,
+          electricityRate: 5000,
+          waterRate: 4000,
           waterBillingType: 'meter',
-          internetFee: 50000,
-          wasteFee: 30000,
+          internetFee: 0,
+          wasteFee: 0,
         },
       ],
       currentMeter: {
@@ -202,10 +202,10 @@ export function generateInitialDatabase(isDemo = false): AppDatabase {
       initialAdvancePayment: i === 3 ? 500000 : 0,
       paymentDueDay: 10,
       waterBillingType: 'meter',
-      electricityRate: 3500,
-      waterRate: 20000,
-      garbageFee: 30000,
-      internetFee: 50000,
+      electricityRate: 5000,
+      waterRate: 4000,
+      garbageFee: 0,
+      internetFee: 0,
       oddDayCalculationRule: 'standard_30_days',
       coOccupantsCount: 2,
       contractNotes: `Hợp đồng thuê 1 năm từ 01/01/2026`,
@@ -248,13 +248,13 @@ export function generateInitialDatabase(isDemo = false): AppDatabase {
       electricStart: eStart,
       electricEnd: eEnd,
       electricUsage: eEnd - eStart,
-      electricRate: 3500,
-      electricTotal: (eEnd - eStart) * 3500,
+      electricRate: 5000,
+      electricTotal: (eEnd - eStart) * 5000,
       waterStart: wStart,
       waterEnd: wEnd,
       waterUsage: wEnd - wStart,
-      waterRate: 20000,
-      waterTotal: (wEnd - wStart) * 20000,
+      waterRate: 4000,
+      waterTotal: (wEnd - wStart) * 4000,
       waterBillingType: 'meter',
       isAnomaly: false,
       isConfirmed: true,
@@ -270,30 +270,30 @@ export function generateInitialDatabase(isDemo = false): AppDatabase {
     const elecItem = {
       id: `item-${code}-elec`,
       type: 'electricity' as const,
-      name: `Điện (${eEnd - eStart} kWh x 3.500 đ)`,
+      name: `Điện (${eEnd - eStart} kWh x 5.000 đ)`,
       quantity: eEnd - eStart,
-      unitPrice: 3500,
-      amount: (eEnd - eStart) * 3500,
+      unitPrice: 5000,
+      amount: (eEnd - eStart) * 5000,
     };
     const waterItem = {
       id: `item-${code}-water`,
       type: 'water' as const,
-      name: `Nước (${wEnd - wStart} m3 x 20.000 đ)`,
+      name: `Nước (${wEnd - wStart} m3 x 4.000 đ)`,
       quantity: wEnd - wStart,
-      unitPrice: 20000,
-      amount: (wEnd - wStart) * 20000,
+      unitPrice: 4000,
+      amount: (wEnd - wStart) * 4000,
     };
     const garbageItem = {
       id: `item-${code}-garb`,
       type: 'garbage' as const,
       name: 'Rác vệ sinh',
-      amount: 30000,
+      amount: 0,
     };
     const netItem = {
       id: `item-${code}-net`,
       type: 'internet' as const,
       name: 'Wifi Internet',
-      amount: 50000,
+      amount: 0,
     };
 
     const currentTotal =
@@ -461,6 +461,76 @@ export function loadDatabase(mode: 'live' | 'demo' = 'live'): AppDatabase {
   try {
     const raw = fs.readFileSync(filePath, 'utf-8');
     const parsed = JSON.parse(raw);
+
+    // Auto-migrate database if from earlier versions with 3500 or 20000
+    let modified = false;
+    if (parsed.profile) {
+      if (parsed.profile.electricityDefaultRate === 3500) {
+        parsed.profile.electricityDefaultRate = 5000;
+        modified = true;
+      }
+      if (parsed.profile.waterDefaultRate === 20000) {
+        parsed.profile.waterDefaultRate = 4000;
+        modified = true;
+      }
+      if (parsed.profile.garbageDefaultFee === 30000) {
+        parsed.profile.garbageDefaultFee = 0;
+        modified = true;
+      }
+      if (parsed.profile.internetDefaultFee === 50000) {
+        parsed.profile.internetDefaultFee = 0;
+        modified = true;
+      }
+    }
+
+    if (Array.isArray(parsed.rooms)) {
+      parsed.rooms.forEach((r: any) => {
+        if (r.priceHistory && r.priceHistory[0]) {
+          if (r.priceHistory[0].electricityRate === 3500) {
+            r.priceHistory[0].electricityRate = 5000;
+            modified = true;
+          }
+          if (r.priceHistory[0].waterRate === 20000) {
+            r.priceHistory[0].waterRate = 4000;
+            modified = true;
+          }
+          if (r.priceHistory[0].wasteFee === 30000) {
+            r.priceHistory[0].wasteFee = 0;
+            modified = true;
+          }
+          if (r.priceHistory[0].internetFee === 50000) {
+            r.priceHistory[0].internetFee = 0;
+            modified = true;
+          }
+        }
+      });
+    }
+
+    if (Array.isArray(parsed.tenancies)) {
+      parsed.tenancies.forEach((t: any) => {
+        if (t.electricityRate === 3500) {
+          t.electricityRate = 5000;
+          modified = true;
+        }
+        if (t.waterRate === 20000) {
+          t.waterRate = 4000;
+          modified = true;
+        }
+        if (t.garbageFee === 30000) {
+          t.garbageFee = 0;
+          modified = true;
+        }
+        if (t.internetFee === 50000) {
+          t.internetFee = 0;
+          modified = true;
+        }
+      });
+    }
+
+    if (modified) {
+      saveDatabase(parsed, mode);
+    }
+
     activeDb = parsed;
     return parsed;
   } catch (err) {

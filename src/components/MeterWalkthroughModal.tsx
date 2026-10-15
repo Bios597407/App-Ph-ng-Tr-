@@ -58,10 +58,10 @@ export const MeterWalkthroughModal: React.FC<MeterWalkthroughModalProps> = ({
         roomName: r.name,
         electricStart: eStart,
         electricEnd: eStart + 75, // Default realistic consumption for quick entry
-        electricRate: 3500,
+        electricRate: r.priceHistory?.[0]?.electricityRate && r.priceHistory[0].electricityRate !== 3500 ? r.priceHistory[0].electricityRate : 5000,
         waterStart: wStart,
         waterEnd: wStart + 8,
-        waterRate: 20000,
+        waterRate: r.priceHistory?.[0]?.waterRate && r.priceHistory[0].waterRate !== 20000 ? r.priceHistory[0].waterRate : 4000,
         waterBillingType: 'meter',
         isAnomaly: false,
         anomalyReason: '',

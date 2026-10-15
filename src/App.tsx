@@ -220,7 +220,7 @@ export default function App() {
       ] = await Promise.all([
         api.getHouse().catch(() => null),
         api.getRooms().catch(() => null),
-        api.getInvoices({ period: currentPeriod }).catch(() => null),
+        api.getInvoices().catch(() => null),
         api.getPayments().catch(() => null),
         api.getMeters().catch(() => null),
         api.getMaintenance().catch(() => null),
@@ -234,6 +234,19 @@ export default function App() {
       if (metersData && metersData.length > 0) setMeters(metersData);
       if (tixData && tixData.length > 0) setTickets(tixData);
       if (expData && expData.length > 0) setExpenses(expData);
+
+      // Persist latest synced state into localStorage fallback DB
+      const currentDb = getClientFallbackDb();
+      saveClientFallbackDb({
+        ...currentDb,
+        profile: houseData?.profile || currentDb.profile,
+        rooms: roomsData && roomsData.length > 0 ? roomsData : currentDb.rooms,
+        invoices: invsData && invsData.length > 0 ? invsData : currentDb.invoices,
+        payments: paysData && paysData.length > 0 ? paysData : currentDb.payments,
+        meterReadings: metersData && metersData.length > 0 ? metersData : currentDb.meterReadings,
+        maintenanceTickets: tixData && tixData.length > 0 ? tixData : currentDb.maintenanceTickets,
+        expenses: expData && expData.length > 0 ? expData : currentDb.expenses,
+      });
     } catch (err) {
       console.warn('Background sync notice (relying on localStorage):', err);
     }
@@ -278,17 +291,17 @@ export default function App() {
       const reading = meters.find((m) => m.roomId === room.id && m.period === currentPeriod);
       const eStart = reading?.electricStart ?? Math.max(0, (room.currentMeter?.electricNumber ?? 1200) - 80);
       const eEnd = reading?.electricEnd ?? (room.currentMeter?.electricNumber ?? 1280);
-      const eRate = reading?.electricRate ?? (profile?.electricityDefaultRate ?? 3500);
+      const eRate = reading?.electricRate ?? (profile?.electricityDefaultRate ?? 5000);
       const eUsage = Math.max(0, eEnd - eStart);
       const eTotal = eUsage * eRate;
 
       const wStart = reading?.waterStart ?? Math.max(0, (room.currentMeter?.waterNumber ?? 340) - 10);
       const wEnd = reading?.waterEnd ?? (room.currentMeter?.waterNumber ?? 350);
-      const wRate = reading?.waterRate ?? (profile?.waterDefaultRate ?? 20000);
+      const wRate = reading?.waterRate ?? (profile?.waterDefaultRate ?? 4000);
       const wUsage = Math.max(0, wEnd - wStart);
       const wTotal = wUsage * wRate;
 
-      const otherFees = (profile?.garbageDefaultFee ?? 30000) + (profile?.internetDefaultFee ?? 50000);
+      const otherFees = (profile?.garbageDefaultFee ?? 0) + (profile?.internetDefaultFee ?? 0);
 
       const inv = invoices.find(
         (i) => i.roomId === room.id && i.periodMonth === currentPeriod && i.status !== 'cancelled'

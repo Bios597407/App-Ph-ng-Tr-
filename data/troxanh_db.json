@@ -7,11 +7,11 @@
     "ownerEmail": "chutro@anbinh.vn",
     "defaultDueDay": 10,
     "defaultCutoffDay": 5,
-    "electricityDefaultRate": 3500,
-    "waterDefaultRate": 20000,
+    "electricityDefaultRate": 5000,
+    "waterDefaultRate": 4000,
     "waterDefaultType": "meter",
-    "internetDefaultFee": 50000,
-    "garbageDefaultFee": 30000,
+    "internetDefaultFee": 0,
+    "garbageDefaultFee": 0,
     "bankAccount": {
       "bankId": "MB",
       "bankName": "MBBank - Ngân hàng Quân Đội",
@@ -28,7 +28,7 @@
       "code": "P01",
       "name": "Phòng 01",
       "status": "rented",
-      "currentRent": 1700000,
+      "currentRent": 3200000,
       "areaM2": 22,
       "maxOccupants": 3,
       "amenities": [
@@ -43,19 +43,19 @@
         {
           "id": "ph-P01-01",
           "effectiveDate": "2026-01-01",
-          "baseRent": 1700000,
-          "electricityRate": 3500,
-          "waterRate": 20000,
+          "baseRent": 3200000,
+          "electricityRate": 5000,
+          "waterRate": 4000,
           "waterBillingType": "meter",
-          "internetFee": 50000,
-          "wasteFee": 30000
+          "internetFee": 0,
+          "wasteFee": 0
         }
       ],
       "currentMeter": {
-        "electricNumber": 1245,
+        "electricNumber": 1285,
         "waterNumber": 352,
-        "electricLastRecordedDate": "2026-10-14",
-        "waterLastRecordedDate": "2026-10-14"
+        "electricLastRecordedDate": "2026-10-15",
+        "waterLastRecordedDate": "2026-10-15"
       }
     },
     {
@@ -79,11 +79,11 @@
           "id": "ph-P02-01",
           "effectiveDate": "2026-01-01",
           "baseRent": 1900000,
-          "electricityRate": 3500,
-          "waterRate": 20000,
+          "electricityRate": 5000,
+          "waterRate": 4000,
           "waterBillingType": "meter",
-          "internetFee": 50000,
-          "wasteFee": 30000
+          "internetFee": 0,
+          "wasteFee": 0
         }
       ],
       "currentMeter": {
@@ -114,11 +114,11 @@
           "id": "ph-P03-01",
           "effectiveDate": "2026-01-01",
           "baseRent": 1500000,
-          "electricityRate": 3500,
-          "waterRate": 20000,
+          "electricityRate": 5000,
+          "waterRate": 4000,
           "waterBillingType": "meter",
-          "internetFee": 50000,
-          "wasteFee": 30000
+          "internetFee": 0,
+          "wasteFee": 0
         }
       ],
       "currentMeter": {
@@ -149,11 +149,11 @@
           "id": "ph-P04-01",
           "effectiveDate": "2026-01-01",
           "baseRent": 1700000,
-          "electricityRate": 3500,
-          "waterRate": 20000,
+          "electricityRate": 5000,
+          "waterRate": 4000,
           "waterBillingType": "meter",
-          "internetFee": 50000,
-          "wasteFee": 30000
+          "internetFee": 0,
+          "wasteFee": 0
         }
       ],
       "currentMeter": {
@@ -184,11 +184,11 @@
           "id": "ph-P05-01",
           "effectiveDate": "2026-01-01",
           "baseRent": 1900000,
-          "electricityRate": 3500,
-          "waterRate": 20000,
+          "electricityRate": 5000,
+          "waterRate": 4000,
           "waterBillingType": "meter",
-          "internetFee": 50000,
-          "wasteFee": 30000
+          "internetFee": 0,
+          "wasteFee": 0
         }
       ],
       "currentMeter": {
@@ -219,11 +219,11 @@
           "id": "ph-P06-01",
           "effectiveDate": "2026-01-01",
           "baseRent": 1500000,
-          "electricityRate": 3500,
-          "waterRate": 20000,
+          "electricityRate": 5000,
+          "waterRate": 4000,
           "waterBillingType": "meter",
-          "internetFee": 50000,
-          "wasteFee": 30000
+          "internetFee": 0,
+          "wasteFee": 0
         }
       ],
       "currentMeter": {
@@ -254,11 +254,11 @@
           "id": "ph-P07-01",
           "effectiveDate": "2026-01-01",
           "baseRent": 1700000,
-          "electricityRate": 3500,
-          "waterRate": 20000,
+          "electricityRate": 5000,
+          "waterRate": 4000,
           "waterBillingType": "meter",
-          "internetFee": 50000,
-          "wasteFee": 30000
+          "internetFee": 0,
+          "wasteFee": 0
         }
       ],
       "currentMeter": {
@@ -289,11 +289,11 @@
           "id": "ph-P08-01",
           "effectiveDate": "2026-01-01",
           "baseRent": 1900000,
-          "electricityRate": 3500,
-          "waterRate": 20000,
+          "electricityRate": 5000,
+          "waterRate": 4000,
           "waterBillingType": "meter",
-          "internetFee": 50000,
-          "wasteFee": 30000
+          "internetFee": 0,
+          "wasteFee": 0
         }
       ],
       "currentMeter": {
@@ -324,11 +324,11 @@
           "id": "ph-P09-01",
           "effectiveDate": "2026-01-01",
           "baseRent": 1500000,
-          "electricityRate": 3500,
-          "waterRate": 20000,
+          "electricityRate": 5000,
+          "waterRate": 4000,
           "waterBillingType": "meter",
-          "internetFee": 50000,
-          "wasteFee": 30000
+          "internetFee": 0,
+          "wasteFee": 0
         }
       ],
       "currentMeter": {
@@ -347,16 +347,16 @@
       "representativePhone": "0911234561",
       "startDate": "2026-01-01",
       "status": "active",
-      "baseRent": 1700000,
+      "baseRent": 3200000,
       "depositAmount": 1700000,
       "initialDebt": 0,
       "initialAdvancePayment": 0,
       "paymentDueDay": 10,
       "waterBillingType": "meter",
-      "electricityRate": 3500,
-      "waterRate": 20000,
-      "garbageFee": 30000,
-      "internetFee": 50000,
+      "electricityRate": 5000,
+      "waterRate": 4000,
+      "garbageFee": 0,
+      "internetFee": 0,
       "oddDayCalculationRule": "standard_30_days",
       "coOccupantsCount": 2,
       "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
@@ -375,10 +375,10 @@
       "initialAdvancePayment": 0,
       "paymentDueDay": 10,
       "waterBillingType": "meter",
-      "electricityRate": 3500,
-      "waterRate": 20000,
-      "garbageFee": 30000,
-      "internetFee": 50000,
+      "electricityRate": 5000,
+      "waterRate": 4000,
+      "garbageFee": 0,
+      "internetFee": 0,
       "oddDayCalculationRule": "standard_30_days",
       "coOccupantsCount": 2,
       "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
@@ -396,10 +396,10 @@
       "initialAdvancePayment": 500000,
       "paymentDueDay": 10,
       "waterBillingType": "meter",
-      "electricityRate": 3500,
-      "waterRate": 20000,
-      "garbageFee": 30000,
-      "internetFee": 50000,
+      "electricityRate": 5000,
+      "waterRate": 4000,
+      "garbageFee": 0,
+      "internetFee": 0,
       "oddDayCalculationRule": "standard_30_days",
       "coOccupantsCount": 2,
       "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
@@ -417,10 +417,10 @@
       "initialAdvancePayment": 0,
       "paymentDueDay": 10,
       "waterBillingType": "meter",
-      "electricityRate": 3500,
-      "waterRate": 20000,
-      "garbageFee": 30000,
-      "internetFee": 50000,
+      "electricityRate": 5000,
+      "waterRate": 4000,
+      "garbageFee": 0,
+      "internetFee": 0,
       "oddDayCalculationRule": "standard_30_days",
       "coOccupantsCount": 2,
       "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
@@ -438,10 +438,10 @@
       "initialAdvancePayment": 0,
       "paymentDueDay": 10,
       "waterBillingType": "meter",
-      "electricityRate": 3500,
-      "waterRate": 20000,
-      "garbageFee": 30000,
-      "internetFee": 50000,
+      "electricityRate": 5000,
+      "waterRate": 4000,
+      "garbageFee": 0,
+      "internetFee": 0,
       "oddDayCalculationRule": "standard_30_days",
       "coOccupantsCount": 2,
       "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
@@ -459,10 +459,10 @@
       "initialAdvancePayment": 0,
       "paymentDueDay": 10,
       "waterBillingType": "meter",
-      "electricityRate": 3500,
-      "waterRate": 20000,
-      "garbageFee": 30000,
-      "internetFee": 50000,
+      "electricityRate": 5000,
+      "waterRate": 4000,
+      "garbageFee": 0,
+      "internetFee": 0,
       "oddDayCalculationRule": "standard_30_days",
       "coOccupantsCount": 2,
       "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
@@ -480,10 +480,10 @@
       "initialAdvancePayment": 0,
       "paymentDueDay": 10,
       "waterBillingType": "meter",
-      "electricityRate": 3500,
-      "waterRate": 20000,
-      "garbageFee": 30000,
-      "internetFee": 50000,
+      "electricityRate": 5000,
+      "waterRate": 4000,
+      "garbageFee": 0,
+      "internetFee": 0,
       "oddDayCalculationRule": "standard_30_days",
       "coOccupantsCount": 2,
       "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
@@ -501,10 +501,10 @@
       "initialAdvancePayment": 0,
       "paymentDueDay": 10,
       "waterBillingType": "meter",
-      "electricityRate": 3500,
-      "waterRate": 20000,
-      "garbageFee": 30000,
-      "internetFee": 50000,
+      "electricityRate": 5000,
+      "waterRate": 4000,
+      "garbageFee": 0,
+      "internetFee": 0,
       "oddDayCalculationRule": "standard_30_days",
       "coOccupantsCount": 2,
       "contractNotes": "Hợp đồng thuê 1 năm từ 01/01/2026"
@@ -597,18 +597,18 @@
       "id": "mr-P01-2026-10",
       "roomId": "room-P01",
       "period": "2026-10",
-      "recordedDate": "2026-10-14",
+      "recordedDate": "2026-10-15",
       "recordedBy": "Nguyễn Văn Chủ (Chủ Trọ)",
-      "electricStart": 1165,
-      "electricEnd": 1245,
+      "electricStart": 1205,
+      "electricEnd": 1285,
       "electricUsage": 80,
-      "electricRate": 3500,
-      "electricTotal": 280000,
+      "electricRate": 5000,
+      "electricTotal": 400000,
       "waterStart": 342,
       "waterEnd": 352,
       "waterUsage": 10,
-      "waterRate": 20000,
-      "waterTotal": 200000,
+      "waterRate": 4000,
+      "waterTotal": 40000,
       "waterBillingType": "meter",
       "isAnomaly": false,
       "anomalyReason": "",
@@ -768,48 +768,48 @@
       "payerName": "Lê Văn An",
       "items": [
         {
-          "id": "item-P01-rent",
+          "id": "it-rent-P01-2026-10",
           "type": "rent",
           "name": "Tiền thuê phòng tháng 10/2026",
-          "amount": 1700000
+          "amount": 3200000
         },
         {
-          "id": "item-P01-elec",
+          "id": "it-elec-P01-2026-10",
           "type": "electricity",
-          "name": "Điện (80 kWh x 3.500 đ)",
+          "name": "Điện (80 kWh x 5.000 đ)",
           "quantity": 80,
-          "unitPrice": 3500,
-          "amount": 280000
+          "unitPrice": 5000,
+          "amount": 400000
         },
         {
-          "id": "item-P01-water",
+          "id": "it-water-P01-2026-10",
           "type": "water",
-          "name": "Nước (10 m3 x 20.000 đ)",
+          "name": "Nước (10 m³ x 4.000 đ)",
           "quantity": 10,
-          "unitPrice": 20000,
-          "amount": 200000
+          "unitPrice": 4000,
+          "amount": 40000
         },
         {
-          "id": "item-P01-garb",
+          "id": "it-garb-P01-2026-10",
           "type": "garbage",
           "name": "Rác vệ sinh",
-          "amount": 30000
+          "amount": 0
         },
         {
-          "id": "item-P01-net",
+          "id": "it-net-P01-2026-10",
           "type": "internet",
           "name": "Wifi Internet",
-          "amount": 50000
+          "amount": 0
         }
       ],
-      "currentCycleTotal": 2260000,
+      "currentCycleTotal": 3640000,
       "previousDebt": 0,
       "appliedAdvance": 0,
       "paidAmount": 1000000,
-      "remainingBalance": 1260000,
+      "remainingBalance": 2640000,
       "status": "locked",
       "paymentStatus": "partial",
-      "version": 1
+      "version": 3
     },
     {
       "id": "inv-P02-202610",
@@ -1401,6 +1401,28 @@
   ],
   "auditLogs": [
     {
+      "id": "audit-1792052887740-eh0d",
+      "timestamp": "2026-10-15T08:28:07.740Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "UPDATE_ROOM_BILLING",
+      "targetType": "invoice",
+      "targetId": "room-P01",
+      "description": "Điều chỉnh kỳ thu phòng P01 (2026-10): Tiền phòng 3.200.000đ, Điện 80 kWh, Nước 10 m³, Tổng 3.640.000đ"
+    },
+    {
+      "id": "audit-1792051444035-w3x3",
+      "timestamp": "2026-10-15T08:04:04.035Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "UPDATE_ROOM_BILLING",
+      "targetType": "invoice",
+      "targetId": "room-P01",
+      "description": "Điều chỉnh kỳ thu phòng P01 (2026-10): Tiền phòng 3.200.000đ, Điện 85 kWh, Nước 12 m³, Tổng 3.817.500đ"
+    },
+    {
       "id": "audit-1791992328848-3e1z",
       "timestamp": "2026-10-14T15:38:48.848Z",
       "actorId": "user-landlord",
@@ -1501,5 +1523,5 @@
     }
   ],
   "lastBackupDate": "2026-10-14T12:40:47.474Z",
-  "version": 20
+  "version": 25
 }

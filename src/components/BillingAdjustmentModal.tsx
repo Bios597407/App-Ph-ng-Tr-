@@ -19,6 +19,7 @@ import {
   Trash2,
   PlusCircle,
   ShieldAlert,
+  User,
 } from 'lucide-react';
 
 interface BillingAdjustmentModalProps {
@@ -46,31 +47,43 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
   onOpenZalo,
   onCollect,
 }) => {
+  // 0. Tenant information state (editable right in dialog)
+  const [tenantNameInput, setTenantNameInput] = useState<string>(tenantName || '');
+  const [tenantPhoneInput, setTenantPhoneInput] = useState<string>(tenantPhone || '');
+
   // 1. Rent state
   const initialRent = currentInvoice?.items.find((it) => it.type === 'rent')?.amount ?? room.currentRent;
   const [rentInput, setRentInput] = useState<string>(initialRent.toString());
 
-  // 2. Electricity state
+  // 2. Electricity state (Starts from 5000)
   const defaultEStart = meterReading?.electricStart ?? Math.max(0, (room.currentMeter?.electricNumber ?? 1200) - 80);
   const defaultEEnd = meterReading?.electricEnd ?? (room.currentMeter?.electricNumber ?? 1280);
-  const defaultERate = meterReading?.electricRate ?? (room.priceHistory?.[0]?.electricityRate ?? 3500);
+  const defaultERate = meterReading?.electricRate && meterReading.electricRate !== 3500
+    ? meterReading.electricRate
+    : (room.priceHistory?.[0]?.electricityRate && room.priceHistory[0].electricityRate !== 3500
+        ? room.priceHistory[0].electricityRate
+        : 5000);
 
   const [elecStartInput, setElecStartInput] = useState<string>(defaultEStart.toString());
   const [elecEndInput, setElecEndInput] = useState<string>(defaultEEnd.toString());
   const [elecRateInput, setElecRateInput] = useState<string>(defaultERate.toString());
 
-  // 3. Water state
+  // 3. Water state (Starts from 4000)
   const defaultWStart = meterReading?.waterStart ?? Math.max(0, (room.currentMeter?.waterNumber ?? 340) - 10);
   const defaultWEnd = meterReading?.waterEnd ?? (room.currentMeter?.waterNumber ?? 350);
-  const defaultWRate = meterReading?.waterRate ?? (room.priceHistory?.[0]?.waterRate ?? 20000);
+  const defaultWRate = meterReading?.waterRate && meterReading.waterRate !== 20000
+    ? meterReading.waterRate
+    : (room.priceHistory?.[0]?.waterRate && room.priceHistory[0].waterRate !== 20000
+        ? room.priceHistory[0].waterRate
+        : 4000);
 
   const [waterStartInput, setWaterStartInput] = useState<string>(defaultWStart.toString());
   const [waterEndInput, setWaterEndInput] = useState<string>(defaultWEnd.toString());
   const [waterRateInput, setWaterRateInput] = useState<string>(defaultWRate.toString());
 
-  // 4. Service fees state (Garbage, Internet, Other)
-  const initialGarbage = currentInvoice?.items.find((it) => it.type === 'garbage')?.amount ?? 30000;
-  const initialInternet = currentInvoice?.items.find((it) => it.type === 'internet')?.amount ?? 50000;
+  // 4. Service fees state (Garbage, Internet, Other - Starts from 0)
+  const initialGarbage = currentInvoice?.items.find((it) => it.type === 'garbage')?.amount ?? 0;
+  const initialInternet = currentInvoice?.items.find((it) => it.type === 'internet')?.amount ?? 0;
   const initialOther = currentInvoice?.items
     .filter((it) => ['other', 'debt_adjustment'].includes(it.type))
     .reduce((sum, it) => sum + it.amount, 0) ?? 0;
@@ -89,18 +102,18 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
 
   const numEStart = parseInt(elecStartInput.replace(/\D/g, ''), 10) || 0;
   const numEEnd = parseInt(elecEndInput.replace(/\D/g, ''), 10) || 0;
-  const rawERate = parseInt(elecRateInput.replace(/\D/g, ''), 10) || 3500;
+  const rawERate = parseInt(elecRateInput.replace(/\D/g, ''), 10) || 5000;
   const eRate = rawERate <= 100 ? rawERate * 1000 : rawERate;
-  const isElectricInvalid = numEEnd < numEStart;
-  const eUsage = isElectricInvalid ? 0 : numEEnd - numEStart;
+  const isElectricInvalid = elecEndInput.trim() !== '' && numEEnd < numEStart;
+  const eUsage = isElectricInvalid ? 0 : Math.max(0, numEEnd - numEStart);
   const eTotalCost = eUsage * eRate;
 
   const numWStart = parseInt(waterStartInput.replace(/\D/g, ''), 10) || 0;
   const numWEnd = parseInt(waterEndInput.replace(/\D/g, ''), 10) || 0;
-  const rawWRate = parseInt(waterRateInput.replace(/\D/g, ''), 10) || 20000;
+  const rawWRate = parseInt(waterRateInput.replace(/\D/g, ''), 10) || 4000;
   const wRate = rawWRate <= 100 ? rawWRate * 1000 : rawWRate;
-  const isWaterInvalid = numWEnd < numWStart;
-  const wUsage = isWaterInvalid ? 0 : numWEnd - numWStart;
+  const isWaterInvalid = waterEndInput.trim() !== '' && numWEnd < numWStart;
+  const wUsage = isWaterInvalid ? 0 : Math.max(0, numWEnd - numWStart);
   const wTotalCost = wUsage * wRate;
 
   const garbageNum = parseInt(garbageFeeInput.replace(/\D/g, ''), 10) || 0;
@@ -145,7 +158,23 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
         garbageFee: garbageNum,
         internetFee: internetNum,
         otherFee: otherNum,
+        tenantName: tenantNameInput.trim(),
+        tenantPhone: tenantPhoneInput.trim(),
       });
+
+      if (room.currentStayId) {
+        try {
+          await api.updateTenancy(room.currentStayId, {
+            representativeName: tenantNameInput.trim(),
+            representativePhone: tenantPhoneInput.trim(),
+            baseRent: rentNum,
+            garbageFee: garbageNum,
+            internetFee: internetNum,
+          });
+        } catch {
+          // Handled inside api.updateTenancy
+        }
+      }
 
       setSaveSuccess(true);
       setTimeout(() => {
@@ -180,9 +209,9 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
                 </span>
               </div>
               <div className="text-xs text-slate-300 font-medium flex items-center gap-2 mt-0.5">
-                <span>Khách thuê: <strong className="text-white">{tenantName || 'Chưa cập nhật'}</strong></span>
-                {tenantPhone && (
-                  <span className="font-mono text-slate-400">({tenantPhone})</span>
+                <span>Khách thuê: <strong className="text-white">{tenantNameInput || 'Chưa cập nhật'}</strong></span>
+                {tenantPhoneInput && (
+                  <span className="font-mono text-slate-400">({tenantPhoneInput})</span>
                 )}
                 {isPaid ? (
                   <span className="text-emerald-400 font-bold ml-1">● Đã thu tiền</span>
@@ -208,7 +237,7 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
           <div className="bg-indigo-50/80 border border-indigo-200/90 rounded-xl px-3.5 py-2.5 flex items-center gap-2 text-indigo-900 text-xs font-semibold">
             <Calculator className="w-4 h-4 text-indigo-600 shrink-0" />
             <span>
-              Tất cả chỉ số Điện, Nước, Phí dịch vụ và Tiền phòng của kỳ này được điều chỉnh tập trung tại hộp thoại này.
+              Tất cả chỉ số Điện, Nước, Phí dịch vụ, Tiền phòng và Thông tin người thuê được điều chỉnh tập trung tại hộp thoại này.
             </span>
           </div>
 
@@ -219,9 +248,54 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
             </div>
           )}
 
+          {/* 0. THÔNG TIN NGƯỜI THUÊ & SỐ ĐIỆN THOẠI */}
+          <div className="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-2xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="font-black text-slate-800 flex items-center gap-1.5 text-xs sm:text-sm">
+                <User className="w-4 h-4 text-indigo-600" />
+                <span>Thông tin người thuê & Liên hệ:</span>
+              </span>
+              <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200/70">
+                Điều chỉnh tại đây
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Họ tên người thuê
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={tenantNameInput}
+                    onChange={(e) => setTenantNameInput(e.target.value)}
+                    placeholder="Nhập tên người thuê..."
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 focus:border-indigo-500 rounded-lg font-bold text-slate-900 text-xs sm:text-sm focus:ring-1 focus:ring-indigo-500 outline-none"
+                  />
+                  <User className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Số điện thoại người thuê
+                </label>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    value={tenantPhoneInput}
+                    onChange={(e) => setTenantPhoneInput(e.target.value)}
+                    placeholder="09xx xxx xxx"
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 focus:border-indigo-500 rounded-lg font-bold text-slate-900 text-xs sm:text-sm font-mono focus:ring-1 focus:ring-indigo-500 outline-none"
+                  />
+                  <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* 1. ROOM RENT */}
           <div className="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-2xs space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="font-black text-slate-800 flex items-center gap-1.5 text-xs sm:text-sm">
                 <Home className="w-4 h-4 text-indigo-600" />
                 <span>1. Tiền phòng (Giá thuê tháng {m}/{y}):</span>
@@ -230,7 +304,7 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={rentNum > 0 ? rentNum.toLocaleString('vi-VN') : ''}
+                  value={rentInput}
                   onChange={(e) => setRentInput(e.target.value.replace(/\D/g, ''))}
                   className="w-36 px-3 py-1.5 bg-slate-50 border border-slate-300 focus:border-indigo-500 rounded-lg text-right font-black text-slate-900 text-sm font-mono focus:ring-1 focus:ring-indigo-500 outline-none"
                   placeholder="0"
@@ -238,6 +312,11 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
                 <span className="font-bold text-slate-500">đ</span>
               </div>
             </div>
+            {rentNum > 0 && (
+              <p className="text-[11px] text-right font-bold text-indigo-700">
+                Hiển thị: {formatVND(rentNum)}
+              </p>
+            )}
           </div>
 
           {/* 2. ELECTRICITY SECTION */}
@@ -258,10 +337,10 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={eRate > 0 ? eRate.toLocaleString('vi-VN') : ''}
+                  value={elecRateInput}
                   onChange={(e) => setElecRateInput(e.target.value.replace(/\D/g, ''))}
                   className="w-24 px-2 py-1 bg-white border border-amber-300 rounded-lg text-right font-black text-slate-900 text-xs font-mono"
-                  placeholder="3.500"
+                  placeholder="5000"
                 />
                 <span className="text-xs text-amber-900 font-bold">đ/kWh</span>
               </div>
@@ -273,9 +352,10 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={numEStart}
+                  value={elecStartInput}
                   onChange={(e) => setElecStartInput(e.target.value.replace(/\D/g, ''))}
                   className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono font-bold text-slate-800 text-sm"
+                  placeholder="0"
                 />
               </div>
               <div>
@@ -285,7 +365,7 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={numEEnd}
+                  value={elecEndInput}
                   onChange={(e) => setElecEndInput(e.target.value.replace(/\D/g, ''))}
                   className={`w-full px-3 py-1.5 bg-white border rounded-lg font-mono font-black text-amber-950 text-base focus:ring-2 outline-none ${
                     isElectricInvalid
@@ -331,10 +411,10 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={wRate > 0 ? wRate.toLocaleString('vi-VN') : ''}
+                  value={waterRateInput}
                   onChange={(e) => setWaterRateInput(e.target.value.replace(/\D/g, ''))}
                   className="w-24 px-2 py-1 bg-white border border-sky-300 rounded-lg text-right font-black text-slate-900 text-xs font-mono"
-                  placeholder="20.000"
+                  placeholder="4000"
                 />
                 <span className="text-xs text-sky-900 font-bold">đ/m³</span>
               </div>
@@ -346,9 +426,10 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={numWStart}
+                  value={waterStartInput}
                   onChange={(e) => setWaterStartInput(e.target.value.replace(/\D/g, ''))}
                   className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono font-bold text-slate-800 text-sm"
+                  placeholder="0"
                 />
               </div>
               <div>
@@ -358,7 +439,7 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={numWEnd}
+                  value={waterEndInput}
                   onChange={(e) => setWaterEndInput(e.target.value.replace(/\D/g, ''))}
                   className={`w-full px-3 py-1.5 bg-white border rounded-lg font-mono font-black text-sky-950 text-base focus:ring-2 outline-none ${
                     isWaterInvalid
@@ -407,11 +488,14 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={garbageNum > 0 ? garbageNum.toLocaleString('vi-VN') : '0'}
+                  value={garbageFeeInput}
                   onChange={(e) => setGarbageFeeInput(e.target.value.replace(/\D/g, ''))}
                   className="w-full px-2 py-1 bg-white border border-slate-300 rounded font-mono font-bold text-right text-xs focus:ring-1 focus:ring-indigo-500"
-                  placeholder="30.000 đ"
+                  placeholder="0"
                 />
+                <p className="text-[10px] text-right text-slate-500 font-semibold mt-0.5">
+                  {formatVND(garbageNum)}
+                </p>
               </div>
 
               <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
@@ -422,11 +506,14 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={internetNum > 0 ? internetNum.toLocaleString('vi-VN') : '0'}
+                  value={internetFeeInput}
                   onChange={(e) => setInternetFeeInput(e.target.value.replace(/\D/g, ''))}
                   className="w-full px-2 py-1 bg-white border border-slate-300 rounded font-mono font-bold text-right text-xs focus:ring-1 focus:ring-indigo-500"
-                  placeholder="50.000 đ"
+                  placeholder="0"
                 />
+                <p className="text-[10px] text-right text-slate-500 font-semibold mt-0.5">
+                  {formatVND(internetNum)}
+                </p>
               </div>
 
               <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
@@ -437,11 +524,14 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={otherNum > 0 ? otherNum.toLocaleString('vi-VN') : '0'}
+                  value={otherFeeInput}
                   onChange={(e) => setOtherFeeInput(e.target.value.replace(/\D/g, ''))}
                   className="w-full px-2 py-1 bg-white border border-slate-300 rounded font-mono font-bold text-right text-xs focus:ring-1 focus:ring-indigo-500"
-                  placeholder="0 đ"
+                  placeholder="0"
                 />
+                <p className="text-[10px] text-right text-slate-500 font-semibold mt-0.5">
+                  {formatVND(otherNum)}
+                </p>
               </div>
             </div>
           </div>

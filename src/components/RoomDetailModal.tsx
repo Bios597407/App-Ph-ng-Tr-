@@ -61,7 +61,7 @@ export const RoomDetailModal: React.FC<RoomDetailModalProps> = ({
   const [identityCard, setIdentityCard] = useState<string>(primaryTenant?.idCardNumber || '079201234567');
   const [depositAmount, setDepositAmount] = useState<string>((stay?.depositAmount || room.currentRent).toString());
   const [startDate, setStartDate] = useState<string>(stay?.startDate || '2026-01-01');
-  const [serviceFeeInput, setServiceFeeInput] = useState<string>('80000');
+  const [serviceFeeInput, setServiceFeeInput] = useState<string>('0');
 
   // Meter Values
   const defaultEStart = existingMeter?.electricStart ?? Math.max(0, (room.currentMeter?.electricNumber ?? 1200) - 80);
@@ -74,9 +74,17 @@ export const RoomDetailModal: React.FC<RoomDetailModalProps> = ({
   const [waterStart, setWaterStart] = useState<string>(defaultWStart.toString());
   const [waterEnd, setWaterEnd] = useState<string>(defaultWEnd.toString());
 
-  // Unit Rates
-  const defaultERate = existingMeter?.electricRate ?? (room.priceHistory?.[0]?.electricityRate ?? 3500);
-  const defaultWRate = existingMeter?.waterRate ?? (room.priceHistory?.[0]?.waterRate ?? 20000);
+  // Unit Rates (Starts from 5000 and 4000)
+  const defaultERate = existingMeter?.electricRate && existingMeter.electricRate !== 3500
+    ? existingMeter.electricRate
+    : (room.priceHistory?.[0]?.electricityRate && room.priceHistory[0].electricityRate !== 3500
+        ? room.priceHistory[0].electricityRate
+        : 5000);
+  const defaultWRate = existingMeter?.waterRate && existingMeter.waterRate !== 20000
+    ? existingMeter.waterRate
+    : (room.priceHistory?.[0]?.waterRate && room.priceHistory[0].waterRate !== 20000
+        ? room.priceHistory[0].waterRate
+        : 4000);
   const [elecRateInput, setElecRateInput] = useState<string>(defaultERate.toString());
   const [waterRateInput, setWaterRateInput] = useState<string>(defaultWRate.toString());
 
@@ -89,7 +97,7 @@ export const RoomDetailModal: React.FC<RoomDetailModalProps> = ({
   const numEEnd = parseInt(elecEnd.replace(/\D/g, ''), 10) || 0;
   const eUsage = numEEnd >= numEStart ? numEEnd - numEStart : 0;
 
-  const rawERate = parseInt(elecRateInput.replace(/\D/g, ''), 10) || 3500;
+  const rawERate = parseInt(elecRateInput.replace(/\D/g, ''), 10) || 5000;
   const eRate = rawERate <= 100 ? rawERate * 1000 : rawERate;
   const eCost = eUsage * eRate;
 
@@ -97,7 +105,7 @@ export const RoomDetailModal: React.FC<RoomDetailModalProps> = ({
   const numWEnd = parseInt(waterEnd.replace(/\D/g, ''), 10) || 0;
   const wUsage = numWEnd >= numWStart ? numWEnd - numWStart : 0;
 
-  const rawWRate = parseInt(waterRateInput.replace(/\D/g, ''), 10) || 20000;
+  const rawWRate = parseInt(waterRateInput.replace(/\D/g, ''), 10) || 4000;
   const wRate = rawWRate <= 100 ? rawWRate * 1000 : rawWRate;
   const wCost = wUsage * wRate;
 
@@ -137,9 +145,11 @@ export const RoomDetailModal: React.FC<RoomDetailModalProps> = ({
         waterStart: numWStart,
         waterEnd: numWEnd,
         waterRate: wRate,
-        garbageFee: 30000,
-        internetFee: 50000,
-        otherFee: serviceFeeNum > 80000 ? serviceFeeNum - 80000 : 0,
+        garbageFee: 0,
+        internetFee: 0,
+        otherFee: serviceFeeNum,
+        tenantName: repName.trim(),
+        tenantPhone: repPhone.trim(),
       });
 
       setSaveSuccess(true);

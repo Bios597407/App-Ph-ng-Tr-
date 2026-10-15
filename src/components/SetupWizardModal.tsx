@@ -38,10 +38,14 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
   const [accountHolder, setAccountHolder] = useState(currentProfile.bankAccount?.accountHolder || '');
 
   const [elecRate, setElecRate] = useState(
-    (currentProfile.electricityDefaultRate || 3500).toString()
+    (currentProfile.electricityDefaultRate && currentProfile.electricityDefaultRate !== 3500
+      ? currentProfile.electricityDefaultRate
+      : 5000).toString()
   );
   const [waterRate, setWaterRate] = useState(
-    (currentProfile.waterDefaultRate || 20000).toString()
+    (currentProfile.waterDefaultRate && currentProfile.waterDefaultRate !== 20000
+      ? currentProfile.waterDefaultRate
+      : 4000).toString()
   );
   const [textScale, setTextScale] = useState<'sm' | 'md' | 'lg'>(() => {
     try {
@@ -73,8 +77,8 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
           address: address.trim(),
           ownerName: ownerName.trim(),
           ownerPhone: ownerPhone.trim(),
-          electricityDefaultRate: parseInt(elecRate.replace(/\D/g, ''), 10) || 3500,
-          waterDefaultRate: parseInt(waterRate.replace(/\D/g, ''), 10) || 20000,
+          electricityDefaultRate: parseInt(elecRate.replace(/\D/g, ''), 10) || 5000,
+          waterDefaultRate: parseInt(waterRate.replace(/\D/g, ''), 10) || 4000,
           bankAccount: {
             bankId,
             bankName,
@@ -257,11 +261,11 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
                     inputMode="numeric"
                     value={elecRate}
                     onChange={(e) => setElecRate(e.target.value)}
-                    placeholder="VD: 3500"
+                    placeholder="VD: 5000"
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white font-black text-sm"
                   />
                   <div className="text-[11px] text-slate-400">
-                    Phổ biến: 3.500 đ hoặc 4.000 đ/số
+                    Mặc định: 5.000 đ/số
                   </div>
                 </div>
 
@@ -275,11 +279,11 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
                     inputMode="numeric"
                     value={waterRate}
                     onChange={(e) => setWaterRate(e.target.value)}
-                    placeholder="VD: 20000"
+                    placeholder="VD: 4000"
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white font-black text-sm"
                   />
                   <div className="text-[11px] text-slate-400">
-                    Phổ biến: 20.000 đ đến 25.000 đ/khối
+                    Mặc định: 4.000 đ/khối
                   </div>
                 </div>
               </div>
