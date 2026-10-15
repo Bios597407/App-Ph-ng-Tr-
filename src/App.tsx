@@ -865,13 +865,13 @@ export default function App() {
             </div>
           </div>
 
-          {/* Row 2: Comprehensive Management Action Buttons */}
-          <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-2 text-xs font-extrabold">
+          {/* Row 2: Comprehensive Management Action Buttons - Bố trí thành 1 hàng duy nhất */}
+          <div className="pt-2 border-t border-slate-100 flex flex-nowrap items-center gap-2 text-xs font-extrabold overflow-x-auto pb-1 scrollbar-none">
             {/* Meter Walkthrough */}
             <button
               type="button"
               onClick={() => setShowWalkthrough(true)}
-              className="py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer"
+              className="py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer shrink-0 whitespace-nowrap"
             >
               <Zap className="w-4 h-4 text-amber-600 shrink-0" />
               <span>Ghi điện nước nhanh</span>
@@ -881,7 +881,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setShowRollForwardConfirm(true)}
-              className="py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5 transition-all shadow-2xs min-h-[40px] cursor-pointer"
+              className="py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5 transition-all shadow-2xs min-h-[40px] cursor-pointer shrink-0 whitespace-nowrap"
               title="Lấy số mới kỳ này gán thành số cũ kỳ sau và khởi tạo tháng mới"
             >
               <RotateCcw className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -892,7 +892,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setShowReminder(true)}
-              className="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-900 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer"
+              className="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-900 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer shrink-0 whitespace-nowrap"
             >
               <Bell className="w-4 h-4 text-rose-600 shrink-0" />
               <span>Nhắc tiền ngày 10</span>
@@ -907,7 +907,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setShowInvoiceManager(true)}
-              className="py-2 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-900 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer"
+              className="py-2 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-900 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer shrink-0 whitespace-nowrap"
             >
               <Receipt className="w-4 h-4 text-indigo-600 shrink-0" />
               <span>Hóa đơn & Doanh thu</span>
@@ -917,7 +917,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setShowMaintenance(true)}
-              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer"
+              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer shrink-0 whitespace-nowrap"
             >
               <Wrench className="w-4 h-4 text-slate-600 shrink-0" />
               <span>Bảo trì & Sự cố</span>
@@ -932,7 +932,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setShowExpenses(true)}
-              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer"
+              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer shrink-0 whitespace-nowrap"
             >
               <DollarSign className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>Chi phí khu trọ</span>
@@ -942,7 +942,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setShowBackup(true)}
-              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer"
+              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer shrink-0 whitespace-nowrap"
             >
               <Database className="w-4 h-4 text-teal-600 shrink-0" />
               <span>Sao lưu dữ liệu</span>
@@ -952,21 +952,10 @@ export default function App() {
             <button
               type="button"
               onClick={() => setShowAudit(true)}
-              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer"
+              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer shrink-0 whitespace-nowrap"
             >
               <History className="w-4 h-4 text-slate-500 shrink-0" />
               <span>Nhật ký</span>
-            </button>
-
-            {/* Acceptance Test Suite */}
-            <button
-              type="button"
-              onClick={() => setShowTestSuite(true)}
-              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 transition-colors shadow-2xs min-h-[40px] cursor-pointer ml-auto"
-              title="Kiểm thử hệ thống 32 kịch bản"
-            >
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Kiểm thử (32 test)</span>
             </button>
           </div>
         </div>

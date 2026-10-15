@@ -28,7 +28,7 @@
       "code": "P01",
       "name": "Phòng 01",
       "status": "rented",
-      "currentRent": 3200000,
+      "currentRent": 1700000,
       "areaM2": 22,
       "maxOccupants": 3,
       "amenities": [
@@ -43,7 +43,7 @@
         {
           "id": "ph-P01-01",
           "effectiveDate": "2026-01-01",
-          "baseRent": 3200000,
+          "baseRent": 1700000,
           "electricityRate": 5000,
           "waterRate": 4000,
           "waterBillingType": "meter",
@@ -52,8 +52,8 @@
         }
       ],
       "currentMeter": {
-        "electricNumber": 1285,
-        "waterNumber": 352,
+        "electricNumber": 1280,
+        "waterNumber": 350,
         "electricLastRecordedDate": "2026-10-15",
         "waterLastRecordedDate": "2026-10-15"
       }
@@ -343,11 +343,11 @@
     {
       "id": "stay-P01-01",
       "roomId": "room-P01",
-      "representativeName": "Lê Văn An",
-      "representativePhone": "0911234561",
+      "representativeName": "Trần Văn An Mới",
+      "representativePhone": "0988776655",
       "startDate": "2026-01-01",
       "status": "active",
-      "baseRent": 3200000,
+      "baseRent": 1700000,
       "depositAmount": 1700000,
       "initialDebt": 0,
       "initialAdvancePayment": 0,
@@ -513,7 +513,7 @@
   "tenants": [
     {
       "id": "tenant-P01-01",
-      "fullName": "Lê Văn An",
+      "fullName": "Lê Văn A",
       "phone": "0911234561",
       "idCardNumber": "079200000001",
       "isRepresentative": true,
@@ -599,13 +599,13 @@
       "period": "2026-10",
       "recordedDate": "2026-10-15",
       "recordedBy": "Nguyễn Văn Chủ (Chủ Trọ)",
-      "electricStart": 1205,
-      "electricEnd": 1285,
+      "electricStart": 1200,
+      "electricEnd": 1280,
       "electricUsage": 80,
       "electricRate": 5000,
       "electricTotal": 400000,
-      "waterStart": 342,
-      "waterEnd": 352,
+      "waterStart": 340,
+      "waterEnd": 350,
       "waterUsage": 10,
       "waterRate": 4000,
       "waterTotal": 40000,
@@ -623,13 +623,13 @@
       "electricStart": 1210,
       "electricEnd": 1290,
       "electricUsage": 80,
-      "electricRate": 3500,
-      "electricTotal": 280000,
+      "electricRate": 5000,
+      "electricTotal": 400000,
       "waterStart": 354,
       "waterEnd": 364,
       "waterUsage": 10,
-      "waterRate": 20000,
-      "waterTotal": 200000,
+      "waterRate": 4000,
+      "waterTotal": 40000,
       "waterBillingType": "meter",
       "isAnomaly": false,
       "isConfirmed": true
@@ -643,13 +643,13 @@
       "electricStart": 1255,
       "electricEnd": 1335,
       "electricUsage": 80,
-      "electricRate": 3500,
-      "electricTotal": 280000,
+      "electricRate": 5000,
+      "electricTotal": 400000,
       "waterStart": 366,
       "waterEnd": 376,
       "waterUsage": 10,
-      "waterRate": 20000,
-      "waterTotal": 200000,
+      "waterRate": 4000,
+      "waterTotal": 40000,
       "waterBillingType": "meter",
       "isAnomaly": false,
       "isConfirmed": true
@@ -663,13 +663,13 @@
       "electricStart": 1300,
       "electricEnd": 1380,
       "electricUsage": 80,
-      "electricRate": 3500,
-      "electricTotal": 280000,
+      "electricRate": 5000,
+      "electricTotal": 400000,
       "waterStart": 378,
       "waterEnd": 388,
       "waterUsage": 10,
-      "waterRate": 20000,
-      "waterTotal": 200000,
+      "waterRate": 4000,
+      "waterTotal": 40000,
       "waterBillingType": "meter",
       "isAnomaly": false,
       "isConfirmed": true
@@ -683,13 +683,13 @@
       "electricStart": 1345,
       "electricEnd": 1425,
       "electricUsage": 80,
-      "electricRate": 3500,
-      "electricTotal": 280000,
+      "electricRate": 5000,
+      "electricTotal": 400000,
       "waterStart": 390,
       "waterEnd": 400,
       "waterUsage": 10,
-      "waterRate": 20000,
-      "waterTotal": 200000,
+      "waterRate": 4000,
+      "waterTotal": 40000,
       "waterBillingType": "meter",
       "isAnomaly": false,
       "isConfirmed": true
@@ -703,13 +703,13 @@
       "electricStart": 1390,
       "electricEnd": 1470,
       "electricUsage": 80,
-      "electricRate": 3500,
-      "electricTotal": 280000,
+      "electricRate": 5000,
+      "electricTotal": 400000,
       "waterStart": 402,
       "waterEnd": 412,
       "waterUsage": 10,
-      "waterRate": 20000,
-      "waterTotal": 200000,
+      "waterRate": 4000,
+      "waterTotal": 40000,
       "waterBillingType": "meter",
       "isAnomaly": false,
       "isConfirmed": true
@@ -723,13 +723,13 @@
       "electricStart": 1435,
       "electricEnd": 1515,
       "electricUsage": 80,
-      "electricRate": 3500,
-      "electricTotal": 280000,
+      "electricRate": 5000,
+      "electricTotal": 400000,
       "waterStart": 414,
       "waterEnd": 424,
       "waterUsage": 10,
-      "waterRate": 20000,
-      "waterTotal": 200000,
+      "waterRate": 4000,
+      "waterTotal": 40000,
       "waterBillingType": "meter",
       "isAnomaly": false,
       "isConfirmed": true
@@ -743,13 +743,13 @@
       "electricStart": 1480,
       "electricEnd": 1560,
       "electricUsage": 80,
-      "electricRate": 3500,
-      "electricTotal": 280000,
+      "electricRate": 5000,
+      "electricTotal": 400000,
       "waterStart": 426,
       "waterEnd": 436,
       "waterUsage": 10,
-      "waterRate": 20000,
-      "waterTotal": 200000,
+      "waterRate": 4000,
+      "waterTotal": 40000,
       "waterBillingType": "meter",
       "isAnomaly": false,
       "isConfirmed": true
@@ -765,13 +765,13 @@
       "utilityPeriodMonth": "2026-10",
       "createdDate": "2026-10-06",
       "dueDate": "2026-10-10",
-      "payerName": "Lê Văn An",
+      "payerName": "Trần Văn An Mới",
       "items": [
         {
           "id": "it-rent-P01-2026-10",
           "type": "rent",
           "name": "Tiền thuê phòng tháng 10/2026",
-          "amount": 3200000
+          "amount": 1700000
         },
         {
           "id": "it-elec-P01-2026-10",
@@ -802,14 +802,14 @@
           "amount": 0
         }
       ],
-      "currentCycleTotal": 3640000,
+      "currentCycleTotal": 2140000,
       "previousDebt": 0,
       "appliedAdvance": 0,
       "paidAmount": 1000000,
-      "remainingBalance": 2640000,
+      "remainingBalance": 1140000,
       "status": "locked",
       "paymentStatus": "partial",
-      "version": 3
+      "version": 6
     },
     {
       "id": "inv-P02-202610",
@@ -1401,6 +1401,39 @@
   ],
   "auditLogs": [
     {
+      "id": "audit-1792054455912-7dhd",
+      "timestamp": "2026-10-15T08:54:15.912Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "UPDATE_ROOM_BILLING",
+      "targetType": "invoice",
+      "targetId": "room-P01",
+      "description": "Điều chỉnh kỳ thu phòng P01 (2026-10): Tiền phòng 1.700.000đ, Điện 80 kWh, Nước 10 m³, Tổng 2.140.000đ"
+    },
+    {
+      "id": "audit-1792053282243-20ei",
+      "timestamp": "2026-10-15T08:34:42.243Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "UPDATE_ROOM_BILLING",
+      "targetType": "invoice",
+      "targetId": "room-P01",
+      "description": "Điều chỉnh kỳ thu phòng P01 (2026-10): Tiền phòng 1.300.000đ, Điện 80 kWh, Nước 10 m³, Tổng 1.740.000đ"
+    },
+    {
+      "id": "audit-1792053151096-2ihf",
+      "timestamp": "2026-10-15T08:32:31.096Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "UPDATE_ROOM_BILLING",
+      "targetType": "invoice",
+      "targetId": "room-P01",
+      "description": "Điều chỉnh kỳ thu phòng P01 (2026-10): Tiền phòng 3.200.000đ, Điện 80 kWh, Nước 10 m³, Tổng 3.640.000đ"
+    },
+    {
       "id": "audit-1792052887740-eh0d",
       "timestamp": "2026-10-15T08:28:07.740Z",
       "actorId": "user-landlord",
@@ -1523,5 +1556,5 @@
     }
   ],
   "lastBackupDate": "2026-10-14T12:40:47.474Z",
-  "version": 25
+  "version": 33
 }

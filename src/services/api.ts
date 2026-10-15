@@ -294,10 +294,10 @@ export class ApiClient {
         initialAdvancePayment: 0,
         paymentDueDay: 10,
         waterBillingType: 'meter',
-        electricityRate: 3500,
-        waterRate: 20000,
-        garbageFee: 30000,
-        internetFee: 50000,
+        electricityRate: 5000,
+        waterRate: 4000,
+        garbageFee: 0,
+        internetFee: 0,
         oddDayCalculationRule: 'standard_30_days',
         coOccupantsCount: 1,
       };
@@ -386,8 +386,8 @@ export class ApiClient {
       );
       const eUsage = Math.max(0, (data.electricEnd || 0) - (data.electricStart || 0));
       const wUsage = Math.max(0, (data.waterEnd || 0) - (data.waterStart || 0));
-      const eRate = data.electricRate || 3500;
-      const wRate = data.waterRate || 20000;
+      const eRate = data.electricRate || 5000;
+      const wRate = data.waterRate || 4000;
       const newMeter: MeterReading = {
         id: existingIdx !== -1 ? db.meterReadings[existingIdx].id : `meter-${data.roomId}-${data.period}`,
         roomId: data.roomId,
@@ -504,15 +504,15 @@ export class ApiClient {
           const reading = db.meterReadings.find((mr) => mr.roomId === room.id && mr.period === periodMonth);
           const eUsage = reading ? reading.electricUsage : 0;
           const wUsage = reading ? reading.waterUsage : 0;
-          const eRate = reading ? reading.electricRate : (db.profile?.electricityDefaultRate ?? 3500);
-          const wRate = reading ? reading.waterRate : (db.profile?.waterDefaultRate ?? 20000);
+          const eRate = reading ? reading.electricRate : (db.profile?.electricityDefaultRate ?? 5000);
+          const wRate = reading ? reading.waterRate : (db.profile?.waterDefaultRate ?? 4000);
 
           const items = [
             { id: `item-${code}-rent-${periodMonth}`, type: 'rent' as const, name: `Tiền thuê phòng tháng ${m}/${y}`, amount: room.currentRent },
             { id: `item-${code}-elec-${periodMonth}`, type: 'electricity' as const, name: `Điện (${eUsage} kWh)`, quantity: eUsage, unitPrice: eRate, amount: eUsage * eRate },
             { id: `item-${code}-water-${periodMonth}`, type: 'water' as const, name: `Nước (${wUsage} m³)`, quantity: wUsage, unitPrice: wRate, amount: wUsage * wRate },
-            { id: `item-${code}-garb-${periodMonth}`, type: 'garbage' as const, name: 'Rác vệ sinh', amount: db.profile?.garbageDefaultFee ?? 30000 },
-            { id: `item-${code}-net-${periodMonth}`, type: 'internet' as const, name: 'Wifi Internet', amount: db.profile?.internetDefaultFee ?? 50000 },
+            { id: `item-${code}-garb-${periodMonth}`, type: 'garbage' as const, name: 'Rác vệ sinh', amount: db.profile?.garbageDefaultFee ?? 0 },
+            { id: `item-${code}-net-${periodMonth}`, type: 'internet' as const, name: 'Wifi Internet', amount: db.profile?.internetDefaultFee ?? 0 },
           ];
 
           const total = items.reduce((s, it) => s + it.amount, 0);
