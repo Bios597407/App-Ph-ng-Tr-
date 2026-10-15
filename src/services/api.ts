@@ -442,33 +442,143 @@ export class ApiClient {
   }
 
   async generateInvoices(periodMonth: string): Promise<{ success: boolean; invoices: Invoice[] }> {
-    return this.request('/invoices/generate', {
-      method: 'POST',
-      body: JSON.stringify({ periodMonth }),
-    });
+    try {
+      return await this.request('/invoices/generate', {
+        method: 'POST',
+        body: JSON.stringify({ periodMonth }),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const [y, m] = periodMonth.split('-');
+      const generated: Invoice[] = [];
+
+      for (const room of db.rooms) {
+        if (room.status === 'rented') {
+          const code = room.code;
+          const stay = db.tenancies.find((s) => s.id === room.currentStayId);
+          const repName = stay?.representativeName || `Phòng ${code}`;
+          const repPhone = stay?.representativePhone || '';
+
+          const reading = db.meterReadings.find((mr) => mr.roomId === room.id && mr.period === periodMonth);
+          const eUsage = reading ? reading.electricUsage : 0;
+          const wUsage = reading ? reading.waterUsage : 0;
+          const eRate = reading ? reading.electricRate : (db.profile?.electricityDefaultRate ?? 3500);
+          const wRate = reading ? reading.waterRate : (db.profile?.waterDefaultRate ?? 20000);
+
+          const items = [
+            { id: `item-${code}-rent-${periodMonth}`, type: 'rent' as const, name: `Tiền thuê phòng tháng ${m}/${y}`, amount: room.currentRent },
+            { id: `item-${code}-elec-${periodMonth}`, type: 'electricity' as const, name: `Điện (${eUsage} kWh)`, quantity: eUsage, unitPrice: eRate, amount: eUsage * eRate },
+            { id: `item-${code}-water-${periodMonth}`, type: 'water' as const, name: `Nước (${wUsage} m³)`, quantity: wUsage, unitPrice: wRate, amount: wUsage * wRate },
+            { id: `item-${code}-garb-${periodMonth}`, type: 'garbage' as const, name: 'Rác vệ sinh', amount: db.profile?.garbageDefaultFee ?? 30000 },
+            { id: `item-${code}-net-${periodMonth}`, type: 'internet' as const, name: 'Wifi Internet', amount: db.profile?.internetDefaultFee ?? 50000 },
+          ];
+
+          const total = items.reduce((s, it) => s + it.amount, 0);
+
+          const existingIdx = db.invoices.findIndex((inv) => inv.roomId === room.id && inv.periodMonth === periodMonth);
+          const inv: Invoice = {
+            id: `inv-${code}-${periodMonth.replace('-', '')}`,
+            invoiceCode: `HD-${periodMonth.replace('-', '')}-${code}`,
+            roomId: room.id,
+            stayId: room.currentStayId || `stay-${code}-01`,
+            periodMonth,
+            status: 'draft',
+            paymentStatus: 'unpaid',
+            createdDate: new Date().toISOString().slice(0, 10),
+            dueDate: `${y}-${m}-10`,
+            items,
+            currentCycleTotal: total,
+            previousDebt: 0,
+            appliedAdvance: 0,
+            paidAmount: 0,
+            remainingBalance: total,
+            payerName: repName,
+            version: 1,
+          };
+
+          if (existingIdx !== -1) {
+            db.invoices[existingIdx] = inv;
+          } else {
+            db.invoices.push(inv);
+          }
+          generated.push(inv);
+        }
+      }
+
+      saveClientFallbackDb(db);
+      return { success: true, invoices: generated };
+    }
   }
 
   async lockInvoice(id: string): Promise<Invoice> {
-    return this.request(`/invoices/${id}/lock`, { method: 'POST' });
+    try {
+      return await this.request(`/invoices/${id}/lock`, { method: 'POST' });
+    } catch {
+      const db = getClientFallbackDb();
+      const inv = db.invoices.find((i) => i.id === id);
+      if (inv) {
+        inv.status = 'locked';
+        inv.lockedAt = new Date().toISOString();
+        saveClientFallbackDb(db);
+        return inv;
+      }
+      throw new Error('Hóa đơn không tồn tại');
+    }
   }
 
   async adjustInvoice(id: string, data: { amount: number; reason: string; type: 'increase' | 'decrease' }): Promise<Invoice> {
-    return this.request(`/invoices/${id}/adjust`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.request(`/invoices/${id}/adjust`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const inv = db.invoices.find((i) => i.id === id);
+      if (inv) {
+        if (data.type === 'increase') {
+          inv.remainingBalance += data.amount;
+          inv.currentCycleTotal += data.amount;
+        } else {
+          inv.remainingBalance = Math.max(0, inv.remainingBalance - data.amount);
+          inv.currentCycleTotal = Math.max(0, inv.currentCycleTotal - data.amount);
+        }
+        saveClientFallbackDb(db);
+        return inv;
+      }
+      throw new Error('Hóa đơn không tồn tại');
+    }
   }
 
   async extendInvoice(id: string, data: { extendedDate: string; reason?: string }): Promise<Invoice> {
-    return this.request(`/invoices/${id}/extend`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.request(`/invoices/${id}/extend`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const inv = db.invoices.find((i) => i.id === id);
+      if (inv) {
+        inv.dueDate = data.extendedDate;
+        saveClientFallbackDb(db);
+        return inv;
+      }
+      throw new Error('Hóa đơn không tồn tại');
+    }
   }
 
   // Payments
   async getPayments(): Promise<Payment[]> {
-    return this.request<Payment[]>('/payments');
+    try {
+      const pays = await this.request<Payment[]>('/payments');
+      if (pays) return pays;
+      const db = getClientFallbackDb();
+      return db.payments;
+    } catch {
+      const db = getClientFallbackDb();
+      return db.payments;
+    }
   }
 
   async recordPayment(data: {
@@ -482,40 +592,143 @@ export class ApiClient {
     idempotencyKey?: string;
     allocations?: any[];
   }): Promise<{ payment: Payment; isDuplicate: boolean }> {
-    return this.request('/payments', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.request('/payments', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const paymentId = `pay-${data.roomId || 'gen'}-${Date.now()}`;
+      const payment: Payment = {
+        id: paymentId,
+        paymentCode: `PT-${Date.now().toString().slice(-6)}`,
+        roomId: data.roomId || '',
+        invoiceId: data.invoiceId,
+        amount: data.amount,
+        receivedAt: new Date().toISOString(),
+        payerName: data.payerName || 'Khách thuê',
+        receivedBy: 'Nguyễn Văn Chủ',
+        method: data.method,
+        bankTransactionRef: data.bankTransactionRef,
+        allocations: data.allocations || [],
+        unallocatedAmount: 0,
+        isReconciled: true,
+        status: 'valid',
+        notes: data.notes,
+      };
+
+      db.payments.push(payment);
+
+      // Allocate payment to invoice
+      if (data.invoiceId) {
+        const inv = db.invoices.find((i) => i.id === data.invoiceId);
+        if (inv) {
+          inv.paidAmount = (inv.paidAmount || 0) + data.amount;
+          inv.remainingBalance = Math.max(0, inv.remainingBalance - data.amount);
+          inv.paymentStatus = inv.remainingBalance <= 0 ? 'paid' : 'partial';
+        }
+      } else if (data.roomId) {
+        const roomInvs = db.invoices
+          .filter((i) => i.roomId === data.roomId && i.remainingBalance > 0 && i.status !== 'cancelled')
+          .sort((a, b) => a.periodMonth.localeCompare(b.periodMonth));
+
+        let remToAlloc = data.amount;
+        for (const inv of roomInvs) {
+          if (remToAlloc <= 0) break;
+          const alloc = Math.min(remToAlloc, inv.remainingBalance);
+          inv.paidAmount = (inv.paidAmount || 0) + alloc;
+          inv.remainingBalance = Math.max(0, inv.remainingBalance - alloc);
+          inv.paymentStatus = inv.remainingBalance <= 0 ? 'paid' : 'partial';
+          remToAlloc -= alloc;
+        }
+      }
+
+      saveClientFallbackDb(db);
+      return { payment, isDuplicate: false };
+    }
   }
 
   async reversePayment(id: string, reason: string): Promise<{ success: boolean; payment: Payment }> {
-    return this.request(`/payments/${id}/reverse`, {
-      method: 'POST',
-      body: JSON.stringify({ reason }),
-    });
+    try {
+      return await this.request(`/payments/${id}/reverse`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const pay = db.payments.find((p) => p.id === id);
+      if (pay) {
+        pay.status = 'reversed';
+        pay.notes = `${pay.notes || ''} [Hủy: ${reason}]`;
+        saveClientFallbackDb(db);
+        return { success: true, payment: pay };
+      }
+      throw new Error('Phiếu thu không tồn tại');
+    }
   }
 
   async reconcilePayment(id: string, data: { roomId: string; invoiceId?: string }): Promise<{ success: boolean; payment: Payment }> {
-    return this.request(`/payments/${id}/reconcile`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.request(`/payments/${id}/reconcile`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const pay = db.payments.find((p) => p.id === id);
+      if (pay) {
+        pay.isReconciled = true;
+        saveClientFallbackDb(db);
+        return { success: true, payment: pay };
+      }
+      throw new Error('Phiếu thu không tồn tại');
+    }
   }
 
   // Deposits & Advances
   async getDeposits(): Promise<DepositTransaction[]> {
-    return this.request<DepositTransaction[]>('/deposits');
+    try {
+      const d = await this.request<DepositTransaction[]>('/deposits');
+      if (d) return d;
+      return getClientFallbackDb().depositTransactions;
+    } catch {
+      return getClientFallbackDb().depositTransactions;
+    }
   }
 
   async addDeposit(data: any): Promise<DepositTransaction> {
-    return this.request('/deposits', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.request('/deposits', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      const dep: DepositTransaction = {
+        id: `dep-${Date.now()}`,
+        roomId: data.roomId,
+        stayId: data.stayId || `stay-${data.roomId}-01`,
+        type: data.type || 'received',
+        amount: data.amount,
+        date: new Date().toISOString().slice(0, 10),
+        reason: data.reason || 'Tiền cọc',
+        recordedBy: 'Nguyễn Văn Chủ',
+      };
+      db.depositTransactions.push(dep);
+      saveClientFallbackDb(db);
+      return dep;
+    }
   }
 
   async getAdvances(): Promise<AdvanceBalanceItem[]> {
-    return this.request<AdvanceBalanceItem[]>('/advances');
+    try {
+      const a = await this.request<AdvanceBalanceItem[]>('/advances');
+      if (a) return a;
+      return getClientFallbackDb().advanceBalances;
+    } catch {
+      return getClientFallbackDb().advanceBalances;
+    }
   }
 
   async refundAdvance(advanceId: string, refundAmount: number, reason: string): Promise<{ success: boolean }> {

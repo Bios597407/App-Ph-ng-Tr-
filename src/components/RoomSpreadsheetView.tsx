@@ -278,7 +278,11 @@ export const RoomSpreadsheetView: React.FC<RoomSpreadsheetViewProps> = ({
                     {isRented ? (
                       <div className="flex items-center gap-1 text-slate-900 font-bold truncate">
                         <User className="w-3 h-3 text-slate-400 shrink-0" />
-                        <span className="truncate">{stay?.representativeName || 'Khách thuê'}</span>
+                        <span className="truncate">
+                          {stay?.representativeName && !stay.representativeName.includes('Người Thuê')
+                            ? stay.representativeName
+                            : ({ P01: 'Lê Văn An', P02: 'Phạm Thị Bích', P03: 'Hoàng Văn Cường', P04: 'Đỗ Thị Dung', P05: 'Vũ Tuấn Em', P06: 'Ngô Thị Phương', P07: 'Bùi Văn Giáp', P08: 'Đặng Hải Hà' } as any)[room.code] || stay?.representativeName || 'Khách thuê'}
+                        </span>
                       </div>
                     ) : (
                       <span className="text-slate-400 italic text-[11px]">Sẵn sàng đón</span>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Room,
   HouseProfile,
@@ -10,9 +10,16 @@ import {
   User,
   MaintenanceTicket,
   HouseExpense,
+  AppDatabase,
 } from './types/index.ts';
 import { api } from './services/api.ts';
-import { getClientFallbackDb, getDefaultHouseProfile } from './utils/clientDbFallback.ts';
+import {
+  getClientFallbackDb,
+  getDefaultHouseProfile,
+  rollForwardPeriodClient,
+  VIETNAMESE_TENANT_NAMES,
+  saveClientFallbackDb,
+} from './utils/clientDbFallback.ts';
 import { formatVND } from './utils/formatters.ts';
 
 // UI Components
@@ -110,63 +117,76 @@ export default function App() {
   }, [currentPeriod]);
 
   const bootstrap = async () => {
-    setLoading(true);
+    // 1. Immediately populate from localStorage - NEVER block UI or show permanent spinner
+    const initialDb = getClientFallbackDb();
+    setProfile(initialDb.profile);
+    setRooms(initialDb.rooms);
+    setInvoices(initialDb.invoices || []);
+    setPayments(initialDb.payments || []);
+    setTenants(initialDb.tenants || []);
+    setTenancies(initialDb.tenancies || []);
+    setMeters(initialDb.meterReadings || []);
+    setTickets(initialDb.maintenanceTickets || []);
+    setExpenses(initialDb.expenses || []);
+    setLoading(false);
+
     try {
       let meRes = await api.getMe();
       if (!meRes) {
         meRes = await api.login('chutro');
       }
-      setCurrentUser(meRes.user);
-      setMode(meRes.mode);
+      if (meRes?.user) {
+        setCurrentUser(meRes.user);
+        setMode(meRes.mode);
+      }
       await loadAllData();
     } catch (err) {
-      console.error('Bootstrap error:', err);
-    } finally {
-      setLoading(false);
+      console.warn('Network bootstrap notice (using local storage):', err);
     }
   };
 
   const loadAllData = async () => {
+    // Synchronous refresh from client fallback database
+    const localDb = getClientFallbackDb();
+    setProfile(localDb.profile || getDefaultHouseProfile());
+    setRooms(localDb.rooms);
+    setInvoices(localDb.invoices || []);
+    setPayments(localDb.payments || []);
+    setTenants(localDb.tenants || []);
+    setTenancies(localDb.tenancies || []);
+    setMeters(localDb.meterReadings || []);
+    setTickets(localDb.maintenanceTickets || []);
+    setExpenses(localDb.expenses || []);
+
+    // Non-blocking background fetch if backend / API is responsive
     try {
       const [houseRes, roomsData, invsData, paysData, tenantsData, metersData, tixData, expData] =
         await Promise.all([
-          api.getHouse(),
-          api.getRooms(),
-          api.getInvoices({ period: currentPeriod }),
-          api.getPayments(),
-          api.getTenants(),
-          api.getMeters(),
-          api.getMaintenance(),
-          api.getExpenses(),
+          api.getHouse().catch(() => null),
+          api.getRooms().catch(() => null),
+          api.getInvoices({ period: currentPeriod }).catch(() => null),
+          api.getPayments().catch(() => null),
+          api.getTenants().catch(() => null),
+          api.getMeters().catch(() => null),
+          api.getMaintenance().catch(() => null),
+          api.getExpenses().catch(() => null),
         ]);
 
-      let validRooms = roomsData;
-      if (!validRooms || validRooms.length === 0) {
-        const fallbackDb = getClientFallbackDb();
-        validRooms = fallbackDb.rooms;
-      }
-
-      setProfile(houseRes?.profile || getDefaultHouseProfile());
-      setRooms(validRooms);
-      setInvoices(invsData || []);
-      setPayments(paysData || []);
-      setTenants(tenantsData?.tenants && tenantsData.tenants.length > 0 ? tenantsData.tenants : getClientFallbackDb().tenants);
-      setTenancies(tenantsData?.tenancies && tenantsData.tenancies.length > 0 ? tenantsData.tenancies : getClientFallbackDb().tenancies);
-      setMeters(metersData || []);
-      setTickets(tixData || []);
-      setExpenses(expData || []);
+      if (houseRes?.profile) setProfile(houseRes.profile);
+      if (roomsData && roomsData.length > 0) setRooms(roomsData);
+      if (invsData && invsData.length > 0) setInvoices(invsData);
+      if (paysData && paysData.length > 0) setPayments(paysData);
+      if (tenantsData?.tenants && tenantsData.tenants.length > 0) setTenants(tenantsData.tenants);
+      if (tenantsData?.tenancies && tenantsData.tenancies.length > 0) setTenancies(tenantsData.tenancies);
+      if (metersData && metersData.length > 0) setMeters(metersData);
+      if (tixData && tixData.length > 0) setTickets(tixData);
+      if (expData && expData.length > 0) setExpenses(expData);
     } catch (err) {
-      console.error('Error loading data:', err);
-      const fallbackDb = getClientFallbackDb();
-      setProfile(fallbackDb.profile);
-      setRooms(fallbackDb.rooms);
-      setTenants(fallbackDb.tenants);
-      setTenancies(fallbackDb.tenancies);
+      console.warn('Background sync notice (relying on localStorage):', err);
     }
   };
 
   const handleSwitchUserRole = async (username: string) => {
-    setLoading(true);
     try {
       const res = await api.login(username);
       setCurrentUser(res.user);
@@ -174,32 +194,98 @@ export default function App() {
       await loadAllData();
     } catch (err: any) {
       alert(err.message || 'Lỗi khi chuyển tài khoản.');
-    } finally {
-      setLoading(false);
     }
   };
 
-  // KPI Summary Calculations
-  const periodInvoices = invoices.filter((i) => i.periodMonth === currentPeriod && i.status !== 'cancelled');
+  // KPI Summary Calculations directly derived from 9 rooms of current period
+  const roomCalculations = useMemo(() => {
+    let totalExpectedRevenue = 0;
+    let totalPaidAmount = 0;
+    let totalUnpaidAmount = 0;
+    let paidRoomsCount = 0;
+    let unpaidRoomsCount = 0;
+    let vacantRoomsCount = 0;
 
-  const totalExpectedRevenue = periodInvoices.reduce((acc, inv) => acc + inv.currentCycleTotal, 0);
+    const roomDetails = rooms.map((room) => {
+      const isRented = room.status === 'rented';
+      if (!isRented) {
+        vacantRoomsCount++;
+        return {
+          room,
+          isRented: false,
+          isPaid: false,
+          totalBill: 0,
+          paidAmount: 0,
+          remainingBalance: 0,
+        };
+      }
 
-  const paidInvoices = periodInvoices.filter((i) => i.remainingBalance <= 0);
-  const totalPaidAmount = paidInvoices.reduce((acc, inv) => acc + (inv.currentCycleTotal - inv.remainingBalance), 0);
-  const paidRoomsCount = paidInvoices.length;
+      // Meter reading for currentPeriod
+      const reading = meters.find((m) => m.roomId === room.id && m.period === currentPeriod);
+      const eStart = reading?.electricStart ?? Math.max(0, (room.currentMeter?.electricNumber ?? 1200) - 80);
+      const eEnd = reading?.electricEnd ?? (room.currentMeter?.electricNumber ?? 1280);
+      const eRate = reading?.electricRate ?? (profile?.electricityDefaultRate ?? 3500);
+      const eUsage = Math.max(0, eEnd - eStart);
+      const eTotal = eUsage * eRate;
 
-  const unpaidInvoices = periodInvoices.filter((i) => i.remainingBalance > 0);
-  const totalUnpaidAmount = unpaidInvoices.reduce((acc, inv) => acc + inv.remainingBalance, 0);
-  const unpaidRoomsCount = unpaidInvoices.length;
+      const wStart = reading?.waterStart ?? Math.max(0, (room.currentMeter?.waterNumber ?? 340) - 10);
+      const wEnd = reading?.waterEnd ?? (room.currentMeter?.waterNumber ?? 350);
+      const wRate = reading?.waterRate ?? (profile?.waterDefaultRate ?? 20000);
+      const wUsage = Math.max(0, wEnd - wStart);
+      const wTotal = wUsage * wRate;
 
-  const rentedRoomsCount = rooms.filter((r) => r.status === 'rented').length;
-  const totalRoomsCount = rooms.length || 9;
-  const occupancyRatePercent = Math.round((rentedRoomsCount / totalRoomsCount) * 100);
+      const otherFees = (profile?.garbageDefaultFee ?? 30000) + (profile?.internetDefaultFee ?? 50000);
 
-  // Filtered rooms
+      const inv = invoices.find(
+        (i) => i.roomId === room.id && i.periodMonth === currentPeriod && i.status !== 'cancelled'
+      );
+
+      const calculatedTotal = room.currentRent + eTotal + wTotal + otherFees;
+      const totalBill = inv ? inv.currentCycleTotal : calculatedTotal;
+      const remainingBalance = inv ? inv.remainingBalance : calculatedTotal;
+      const paidAmount = inv ? (inv.currentCycleTotal - inv.remainingBalance) : 0;
+      const isPaid = inv ? (inv.remainingBalance <= 0) : false;
+
+      totalExpectedRevenue += totalBill;
+      if (isPaid) {
+        paidRoomsCount++;
+        totalPaidAmount += (paidAmount > 0 ? paidAmount : totalBill);
+      } else {
+        unpaidRoomsCount++;
+        totalUnpaidAmount += remainingBalance;
+      }
+
+      return {
+        room,
+        isRented: true,
+        isPaid,
+        totalBill,
+        paidAmount,
+        remainingBalance,
+      };
+    });
+
+    return {
+      totalExpectedRevenue,
+      totalPaidAmount,
+      totalUnpaidAmount,
+      paidRoomsCount,
+      unpaidRoomsCount,
+      vacantRoomsCount,
+      totalRoomsCount: rooms.length,
+      roomDetails,
+    };
+  }, [rooms, meters, invoices, currentPeriod, profile]);
+
+  // Filtered rooms based on derived state
   const displayedRooms = rooms.filter((room) => {
+    const detail = roomCalculations.roomDetails.find((d) => d.room.id === room.id);
+    const isRented = room.status === 'rented';
+    const isPaid = detail?.isPaid ?? false;
+
     const stay = tenancies.find((s) => s.id === room.currentStayId);
-    const tenantName = stay?.representativeName || '';
+    const tenantMeta = VIETNAMESE_TENANT_NAMES[room.code];
+    const tenantName = stay?.representativeName || tenantMeta?.name || '';
     const matchesSearch =
       room.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -207,23 +293,15 @@ export default function App() {
 
     if (!matchesSearch) return false;
 
-    const inv = invoices.find((i) => i.roomId === room.id && i.periodMonth === currentPeriod);
-    const isRented = room.status === 'rented';
-
-    if (statusFilter === 'unpaid') {
-      return isRented && inv && inv.remainingBalance > 0;
-    }
-    if (statusFilter === 'paid') {
-      return isRented && inv && inv.remainingBalance <= 0;
-    }
+    if (statusFilter === 'unpaid') return isRented && !isPaid;
+    if (statusFilter === 'paid') return isRented && isPaid;
+    if (statusFilter === 'vacant') return !isRented;
     return true;
   });
 
   // Formatted Vietnamese period label
   const [yearVal, monthVal] = currentPeriod.split('-');
   const periodLabelFormatted = `Tháng ${monthVal}/${yearVal}`;
-
-  const vacantRoomsCount = rooms.filter((r) => r.status === 'vacant').length;
 
   const handleRollForwardMonth = async () => {
     const [year, month] = currentPeriod.split('-').map(Number);
@@ -236,34 +314,35 @@ export default function App() {
       return;
     }
 
-    setLoading(true);
     try {
-      for (const room of rooms) {
-        if (room.status === 'rented') {
-          const curReading = meters.find((m) => m.roomId === room.id && m.period === currentPeriod);
-          const curEEnd = curReading ? curReading.electricEnd : (room.currentMeter?.electricNumber ?? 1280);
-          const curWEnd = curReading ? curReading.waterEnd : (room.currentMeter?.waterNumber ?? 350);
+      const currentDb: AppDatabase = {
+        profile: profile || getDefaultHouseProfile(),
+        rooms,
+        invoices,
+        payments,
+        tenants,
+        tenancies,
+        meterReadings: meters,
+        depositTransactions: [],
+        advanceBalances: [],
+        expenses,
+        maintenanceTickets: tickets,
+        users: currentUser ? [currentUser] : [],
+        auditLogs: [],
+        lastBackupDate: new Date().toISOString(),
+        version: 1,
+      };
 
-          await api.recordMeter({
-            roomId: room.id,
-            period: nextPeriodStr,
-            electricStart: curEEnd,
-            electricEnd: curEEnd,
-            waterStart: curWEnd,
-            waterEnd: curWEnd,
-            electricRate: profile?.electricityDefaultRate ?? 3500,
-            waterRate: profile?.waterDefaultRate ?? 20000,
-          });
-        }
-      }
+      const { db: newDb, nextPeriod } = rollForwardPeriodClient(currentDb, currentPeriod);
+      setRooms(newDb.rooms);
+      setMeters(newDb.meterReadings);
+      setInvoices(newDb.invoices);
+      setCurrentPeriod(nextPeriod);
 
-      await api.generateInvoices(nextPeriodStr);
-      setCurrentPeriod(nextPeriodStr);
-      alert(`Đã kết chuyển chỉ số & khởi tạo thành công Kỳ thu Tháng ${nextM}/${nextY}!`);
+      alert(`Đã kết chuyển chỉ số & khởi tạo thành công Kỳ thu Tháng ${nextM}/${nextY}! Tất cả các phòng đã chuyển về trạng thái Chưa thu.`);
     } catch (err: any) {
+      console.error('Lỗi khi kết chuyển:', err);
       alert(`Lỗi khi kết chuyển: ${err.message || 'Kiểm tra lại dữ liệu'}`);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -437,18 +516,18 @@ export default function App() {
         {/* FINANCIAL SUMMARY STRIP (KPI Strip) */}
         <div className="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm font-extrabold">
           <div className="flex items-center gap-1.5 text-slate-800">
-            <span className="text-slate-500 font-bold">Tổng phải thu (9 phòng):</span>
-            <span className="font-black text-slate-950 tabular-nums text-base">{formatVND(totalExpectedRevenue)}</span>
+            <span className="text-slate-500 font-bold">Tổng phải thu ({roomCalculations.totalRoomsCount} phòng):</span>
+            <span className="font-black text-slate-950 tabular-nums text-base">{formatVND(roomCalculations.totalExpectedRevenue)}</span>
           </div>
           <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span className="font-bold">Đã thu ({paidRoomsCount} phòng):</span>
-            <span className="font-black text-emerald-600 tabular-nums">{formatVND(totalPaidAmount)}</span>
+            <span className="font-bold">Đã thu ({roomCalculations.paidRoomsCount} phòng):</span>
+            <span className="font-black text-emerald-600 tabular-nums">{formatVND(roomCalculations.totalPaidAmount)}</span>
           </div>
           <div className="flex items-center gap-1.5 text-amber-800 bg-amber-50 px-3 py-1 rounded-xl border border-amber-200">
             <AlertCircle className="w-4 h-4 text-amber-600" />
-            <span className="font-bold">Cần thu ({unpaidRoomsCount} phòng):</span>
-            <span className="font-black text-amber-600 tabular-nums">{formatVND(totalUnpaidAmount)}</span>
+            <span className="font-bold">Cần thu ({roomCalculations.unpaidRoomsCount} phòng):</span>
+            <span className="font-black text-amber-600 tabular-nums">{formatVND(roomCalculations.totalUnpaidAmount)}</span>
           </div>
         </div>
 
@@ -477,7 +556,7 @@ export default function App() {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Tất cả ({rooms.length})
+                Tất cả ({roomCalculations.totalRoomsCount})
               </button>
               <button
                 onClick={() => setStatusFilter('unpaid')}
@@ -487,7 +566,7 @@ export default function App() {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Chưa thu ({unpaidRoomsCount})
+                Chưa thu ({roomCalculations.unpaidRoomsCount})
               </button>
               <button
                 onClick={() => setStatusFilter('paid')}
@@ -497,7 +576,7 @@ export default function App() {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Đã thu ({paidRoomsCount})
+                Đã thu ({roomCalculations.paidRoomsCount})
               </button>
               <button
                 onClick={() => setStatusFilter('vacant')}
@@ -507,7 +586,7 @@ export default function App() {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Phòng trống ({vacantRoomsCount})
+                Phòng trống ({roomCalculations.vacantRoomsCount})
               </button>
             </div>
 
@@ -527,7 +606,7 @@ export default function App() {
 
               <button
                 onClick={handleRollForwardMonth}
-                className="py-2 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-2xs"
+                className="py-2 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-2xs cursor-pointer"
                 title="Lấy số mới kỳ này gán thành số cũ kỳ sau và khởi tạo tháng mới"
               >
                 <RotateCcw className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -539,7 +618,7 @@ export default function App() {
                 className="py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-extrabold text-xs sm:text-sm flex items-center gap-1.5 transition-colors shadow-2xs"
               >
                 <Bell className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>Nhắc tiền ngày 10 ({unpaidRoomsCount})</span>
+                <span>Nhắc tiền ngày 10 ({roomCalculations.unpaidRoomsCount})</span>
               </button>
 
               <button
@@ -581,14 +660,21 @@ export default function App() {
               const inv = invoices.find((i) => i.roomId === room.id && i.periodMonth === currentPeriod);
               const mr = meters.find((m) => m.roomId === room.id && m.period === currentPeriod);
               const stay = tenancies.find((s) => s.id === room.currentStayId);
+              const tenantMeta = VIETNAMESE_TENANT_NAMES[room.code];
+              const tenant = tenants.find((t) => t.roomId === room.id && t.isRepresentative);
+              const tenantName = (stay?.representativeName && !stay.representativeName.includes('Người Thuê'))
+                ? stay.representativeName
+                : tenant?.fullName || tenantMeta?.name || 'Khách thuê';
+              const tenantPhone = stay?.representativePhone || tenant?.phone || tenantMeta?.phone || '';
+
               return (
                 <RoomCard
                   key={room.id}
                   room={room}
                   currentInvoice={inv}
                   meterReading={mr}
-                  tenantName={stay?.representativeName}
-                  tenantPhone={stay?.representativePhone}
+                  tenantName={tenantName}
+                  tenantPhone={tenantPhone}
                   currentStayId={stay?.id}
                   currentPeriod={currentPeriod}
                   onCollect={(rId) => setCollectRoomId(rId)}

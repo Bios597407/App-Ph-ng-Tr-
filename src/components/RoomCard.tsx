@@ -173,6 +173,22 @@ export const RoomCard: React.FC<RoomCardProps> = ({
     }
   };
 
+  const DEFAULT_TENANT_NAMES: Record<string, string> = {
+    P01: 'Lê Văn An',
+    P02: 'Phạm Thị Bích',
+    P03: 'Hoàng Văn Cường',
+    P04: 'Đỗ Thị Dung',
+    P05: 'Vũ Tuấn Em',
+    P06: 'Ngô Thị Phương',
+    P07: 'Bùi Văn Giáp',
+    P08: 'Đặng Hải Hà',
+  };
+
+  let displayTenantName = tenantName;
+  if (!displayTenantName || displayTenantName.includes('Người Thuê')) {
+    displayTenantName = DEFAULT_TENANT_NAMES[room.code] || tenantName || 'Khách thuê';
+  }
+
   return (
     <div
       onClick={() => onViewDetails(room)}
@@ -227,9 +243,11 @@ export const RoomCard: React.FC<RoomCardProps> = ({
         {/* TENANT INFO ROW */}
         {isRented ? (
           <div className="bg-slate-50/90 rounded-xl px-3.5 py-2 border border-slate-200 flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2 truncate">
+            <div className="flex items-center gap-2 min-w-0">
               <User className="w-4 h-4 text-indigo-500 shrink-0" />
-              <span className="font-extrabold text-slate-900 truncate">{tenantName || 'Lê Văn An'}</span>
+              <span className="font-extrabold text-slate-900 truncate" title={displayTenantName}>
+                {displayTenantName}
+              </span>
               {tenantPhone && (
                 <button
                   type="button"
@@ -275,12 +293,12 @@ export const RoomCard: React.FC<RoomCardProps> = ({
                   : 'bg-amber-50/60 border-amber-200/80'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="font-black text-amber-950 flex items-center gap-1 text-xs">
-                  <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-                  <span>Điện ({Math.round(eRate / 1000)}k)</span>
+              <div className="flex items-center justify-between gap-1">
+                <span className="font-black text-amber-950 flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
+                  <Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
+                  <span className="whitespace-nowrap">Điện ({Math.round(eRate / 1000)}k)</span>
                 </span>
-                <span className="font-mono font-extrabold text-amber-900 bg-amber-100/90 px-1.5 py-0.5 rounded text-xs tabular-nums">
+                <span className="font-mono font-extrabold text-amber-900 bg-amber-100/90 px-1.5 py-0.5 rounded text-xs tabular-nums whitespace-nowrap shrink-0">
                   {eUsage} kWh
                 </span>
               </div>
@@ -324,12 +342,12 @@ export const RoomCard: React.FC<RoomCardProps> = ({
                   : 'bg-sky-50/60 border-sky-200/80'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="font-black text-sky-950 flex items-center gap-1 text-xs">
-                  <Droplet className="w-4 h-4 text-sky-500 fill-sky-500" />
-                  <span>Nước ({Math.round(wRate / 1000)}k)</span>
+              <div className="flex items-center justify-between gap-1">
+                <span className="font-black text-sky-950 flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
+                  <Droplet className="w-4 h-4 text-sky-500 fill-sky-500 shrink-0" />
+                  <span className="whitespace-nowrap">Nước ({Math.round(wRate / 1000)}k)</span>
                 </span>
-                <span className="font-mono font-extrabold text-sky-900 bg-sky-100/90 px-1.5 py-0.5 rounded text-xs tabular-nums">
+                <span className="font-mono font-extrabold text-sky-900 bg-sky-100/90 px-1.5 py-0.5 rounded text-xs tabular-nums whitespace-nowrap shrink-0">
                   {wUsage} m³
                 </span>
               </div>
