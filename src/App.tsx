@@ -121,7 +121,7 @@ export default function App() {
   const [, setShowExpenses] = useState<boolean>(false);
   const [, setShowBackup] = useState<boolean>(false);
   const [showAudit, setShowAudit] = useState<boolean>(false);
-  const [, setShowSetup] = useState<boolean>(false);
+  const [showSetup, setShowSetup] = useState<boolean>(false);
   const [zaloCalcRoomId, setZaloCalcRoomId] = useState<string | null>(null);
 
   // Initialize and load session
@@ -943,6 +943,18 @@ export default function App() {
           onClose={() => setZaloCalcRoomId(null)}
           onSuccess={() => {
             loadAllData();
+          }}
+        />
+      )}
+
+      {showSetup && profile && (
+        <SetupWizardModal
+          currentProfile={profile}
+          rooms={rooms}
+          onClose={() => setShowSetup(false)}
+          onSuccess={() => {
+            loadAllData();
+            setShowSetup(false);
           }}
         />
       )}
