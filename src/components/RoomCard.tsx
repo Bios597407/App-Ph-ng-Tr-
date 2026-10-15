@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Room, Invoice, MeterReading } from '../types/index.ts';
 import { formatVND } from '../utils/formatters.ts';
-import { api } from '../services/api.ts';
 import {
   User,
   Zap,
@@ -11,9 +10,10 @@ import {
   Phone,
   MessageCircle,
   AlertCircle,
-  Check,
   RotateCcw,
   Copy,
+  Calculator,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 interface RoomCardProps {
@@ -26,6 +26,7 @@ interface RoomCardProps {
   currentPeriod: string;
   onCollect: (roomId: string) => void;
   onViewDetails: (room: Room) => void;
+  onOpenAdjustment?: (room: Room) => void;
   onOpenZalo?: (roomId: string) => void;
   onRefresh?: () => void;
 }
@@ -36,100 +37,53 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   meterReading,
   tenantName = '',
   tenantPhone = '',
-  currentPeriod,
   onCollect,
   onViewDetails,
+  onOpenAdjustment,
   onOpenZalo,
-  onRefresh,
 }) => {
   const isRented = room.status === 'rented';
   const remaining = currentInvoice ? currentInvoice.remainingBalance : 0;
   const isPaid = isRented && currentInvoice && remaining <= 0;
 
-  // Meter Initial Values
-  const defaultEStart =
+  // Meter Reading Numbers (Read-only on Card, Adjusted exclusively via Dialog)
+  const numEStart =
     meterReading?.electricStart ?? Math.max(0, (room.currentMeter?.electricNumber ?? 1200) - 80);
-  const defaultEEnd = meterReading?.electricEnd ?? (room.currentMeter?.electricNumber ?? 1280);
+  const numEEnd = meterReading?.electricEnd ?? (room.currentMeter?.electricNumber ?? 1280);
 
-  const defaultWStart =
+  const numWStart =
     meterReading?.waterStart ?? Math.max(0, (room.currentMeter?.waterNumber ?? 340) - 10);
-  const defaultWEnd = meterReading?.waterEnd ?? (room.currentMeter?.waterNumber ?? 350);
+  const numWEnd = meterReading?.waterEnd ?? (room.currentMeter?.waterNumber ?? 350);
 
-  // Local Editable States
-  const [elecEndInput, setElecEndInput] = useState<string>(defaultEEnd.toString());
-  const [waterEndInput, setWaterEndInput] = useState<string>(defaultWEnd.toString());
+  // Unit Rates
+  const activeRate = room.priceHistory && room.priceHistory.length > 0 ? room.priceHistory[0] : null;
+  const rawERate = meterReading?.electricRate ?? (activeRate?.electricityRate ?? 3500);
+  const eRate = rawERate <= 100 ? rawERate * 1000 : rawERate;
 
-  // Other Fees / Adjustment State (Wifi, Garbage, Previous Debt...)
-  const initialOtherFees = currentInvoice
+  const rawWRate = meterReading?.waterRate ?? (activeRate?.waterRate ?? 20000);
+  const wRate = rawWRate <= 100 ? rawWRate * 1000 : rawWRate;
+
+  // Usage and Costs
+  const isElectricInvalid = numEEnd < numEStart;
+  const eUsage = isElectricInvalid ? 0 : numEEnd - numEStart;
+  const eTotalCost = eUsage * eRate;
+
+  const isWaterInvalid = numWEnd < numWStart;
+  const wUsage = isWaterInvalid ? 0 : numWEnd - numWStart;
+  const wTotalCost = wUsage * wRate;
+
+  // Service Fees & Adjustments
+  const otherFeesNum = currentInvoice
     ? currentInvoice.items
         .filter((it) => ['garbage', 'internet', 'other', 'debt_adjustment'].includes(it.type))
         .reduce((sum, it) => sum + it.amount, 0)
     : 80000;
 
-  const [otherFeesInput, setOtherFeesInput] = useState<string>(initialOtherFees.toString());
-
-  const activeRate = room.priceHistory && room.priceHistory.length > 0 ? room.priceHistory[0] : null;
-  const initialERate = meterReading?.electricRate ?? (activeRate?.electricityRate ?? 3500);
-  const initialWRate = meterReading?.waterRate ?? (activeRate?.waterRate ?? 20000);
-
-  const [eRateInput, setERateInput] = useState<string>(initialERate.toString());
-  const [wRateInput, setWRateInput] = useState<string>(initialWRate.toString());
-
-  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
-  const [copiedPhoneToast, setCopiedPhoneToast] = useState<boolean>(false);
-
-  useEffect(() => {
-    setElecEndInput(defaultEEnd.toString());
-    setWaterEndInput(defaultWEnd.toString());
-  }, [defaultEEnd, defaultWEnd]);
-
-  // Meter & Rate Math
-  const numEStart = defaultEStart;
-  const numEEnd = parseInt(elecEndInput.replace(/\D/g, ''), 10) || 0;
-  const isElectricInvalid = numEEnd < numEStart;
-  const eUsage = isElectricInvalid ? 0 : numEEnd - numEStart;
-
-  const rawERate = parseInt(eRateInput.replace(/\D/g, ''), 10) || 3500;
-  const eRate = rawERate <= 100 ? rawERate * 1000 : rawERate;
-  const eTotalCost = eUsage * eRate;
-
-  const numWStart = defaultWStart;
-  const numWEnd = parseInt(waterEndInput.replace(/\D/g, ''), 10) || 0;
-  const isWaterInvalid = numWEnd < numWStart;
-  const wUsage = isWaterInvalid ? 0 : numWEnd - numWStart;
-
-  const rawWRate = parseInt(wRateInput.replace(/\D/g, ''), 10) || 20000;
-  const wRate = rawWRate <= 100 ? rawWRate * 1000 : rawWRate;
-  const wTotalCost = wUsage * wRate;
-
-  const otherFeesNum = parseInt(otherFeesInput.replace(/\D/g, ''), 10) || 0;
-
   // Exact Transparent Sum
   const calculatedTotal = room.currentRent + eTotalCost + wTotalCost + otherFeesNum;
   const totalBill = calculatedTotal;
 
-  const handleSaveMeters = async () => {
-    if (!isRented) return;
-
-    try {
-      await api.recordMeter({
-        roomId: room.id,
-        period: currentPeriod,
-        electricStart: numEStart,
-        electricEnd: numEEnd,
-        waterStart: numWStart,
-        waterEnd: numWEnd,
-        electricRate: eRate,
-        waterRate: wRate,
-      });
-
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2000);
-      if (onRefresh) onRefresh();
-    } catch (err) {
-      console.error('Error saving meters on card:', err);
-    }
-  };
+  const [copiedPhoneToast, setCopiedPhoneToast] = useState<boolean>(false);
 
   const handleCopyPhone = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -139,37 +93,11 @@ export const RoomCard: React.FC<RoomCardProps> = ({
     setTimeout(() => setCopiedPhoneToast(false), 2000);
   };
 
-  // Keyboard navigation logic
-  const handleElectricKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === 'Tab') {
-      e.preventDefault();
-      handleSaveMeters();
-      const waterEl = document.querySelector<HTMLInputElement>(
-        `[data-room-id="${room.id}"][data-field="water"]`
-      );
-      if (waterEl) {
-        waterEl.focus();
-        waterEl.select();
-      }
-    }
-  };
-
-  const handleWaterKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSaveMeters();
-      // Move focus to next room's electric input
-      const allElectricInputs = Array.from(
-        document.querySelectorAll<HTMLInputElement>('[data-field="electric"]')
-      );
-      const currentIndex = allElectricInputs.findIndex(
-        (el) => el.getAttribute('data-room-id') === room.id
-      );
-      if (currentIndex !== -1 && currentIndex + 1 < allElectricInputs.length) {
-        const nextInput = allElectricInputs[currentIndex + 1];
-        nextInput.focus();
-        nextInput.select();
-      }
+  const handleOpenDialog = () => {
+    if (onOpenAdjustment) {
+      onOpenAdjustment(room);
+    } else {
+      onViewDetails(room);
     }
   };
 
@@ -191,8 +119,9 @@ export const RoomCard: React.FC<RoomCardProps> = ({
 
   return (
     <div
-      onClick={() => onViewDetails(room)}
+      onClick={handleOpenDialog}
       className="bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl p-4 transition-all duration-200 shadow-sm hover:shadow-md flex flex-col justify-between relative overflow-hidden group cursor-pointer"
+      title="Bấm vào thẻ hoặc 'Tổng tiền kỳ này' để mở hộp thoại điều chỉnh chỉ số điện nước & phí"
     >
       {/* Top Accent Line */}
       <div
@@ -252,7 +181,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({
                 <button
                   type="button"
                   onClick={handleCopyPhone}
-                  className="text-slate-600 hover:text-indigo-600 font-mono font-bold tabular-nums shrink-0 flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-slate-200 text-xs"
+                  className="text-slate-600 hover:text-indigo-600 font-mono font-bold tabular-nums shrink-0 flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-slate-200 text-xs cursor-pointer"
                   title="Bấm để sao chép SĐT"
                 >
                   <span>{tenantPhone}</span>
@@ -282,17 +211,11 @@ export const RoomCard: React.FC<RoomCardProps> = ({
           </div>
         )}
 
-        {/* DIRECT METER EDITING SECTION */}
+        {/* METER READINGS OVERVIEW DISPLAY (READ-ONLY ON CARD) */}
         {isRented && (
-          <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm" onClick={(e) => e.stopPropagation()}>
-            {/* Electricity Box */}
-            <div
-              className={`rounded-xl p-2.5 border space-y-1.5 transition-colors ${
-                isElectricInvalid
-                  ? 'bg-rose-50/80 border-rose-300'
-                  : 'bg-amber-50/60 border-amber-200/80'
-              }`}
-            >
+          <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+            {/* Electricity Summary Box */}
+            <div className="rounded-xl p-2.5 border bg-amber-50/60 border-amber-200/80 space-y-1">
               <div className="flex items-center justify-between gap-1">
                 <span className="font-black text-amber-950 flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
                   <Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
@@ -302,46 +225,20 @@ export const RoomCard: React.FC<RoomCardProps> = ({
                   {eUsage} kWh
                 </span>
               </div>
-              <div className="flex items-center justify-between text-slate-700 font-mono text-xs">
-                <span className="text-slate-400 font-bold">{numEStart} ➔</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  data-room-id={room.id}
-                  data-field="electric"
-                  value={elecEndInput}
-                  onChange={(e) => setElecEndInput(e.target.value)}
-                  onBlur={handleSaveMeters}
-                  onKeyDown={handleElectricKeyDown}
-                  onFocus={(e) => e.target.select()}
-                  className={`w-20 px-2 py-1.5 bg-white border rounded-lg text-right font-black focus:outline-none text-xs sm:text-sm min-h-[44px] ${
-                    isElectricInvalid
-                      ? 'border-rose-500 text-rose-950 focus:ring-2 focus:ring-rose-500'
-                      : 'border-amber-300 text-slate-900 focus:ring-1 focus:ring-amber-500'
-                  }`}
-                  placeholder="Số mới"
-                />
+              <div className="flex items-center justify-between text-slate-700 font-mono text-xs pt-0.5">
+                <span className="text-slate-500 font-bold">{numEStart}</span>
+                <span className="text-slate-400 font-sans">➔</span>
+                <span className="font-black text-amber-950 bg-white px-2 py-0.5 rounded border border-amber-300">
+                  {numEEnd}
+                </span>
               </div>
-              {isElectricInvalid ? (
-                <p className="text-[11px] font-bold text-rose-600 text-right">
-                  ⚠️ Số mới thấp hơn số cũ!
-                </p>
-              ) : (
-                <div className="text-xs text-amber-950 font-black text-right tabular-nums">
-                  {formatVND(eTotalCost)}
-                </div>
-              )}
+              <div className="text-xs text-amber-950 font-black text-right tabular-nums pt-0.5">
+                {formatVND(eTotalCost)}
+              </div>
             </div>
 
-            {/* Water Box */}
-            <div
-              className={`rounded-xl p-2.5 border space-y-1.5 transition-colors ${
-                isWaterInvalid
-                  ? 'bg-rose-50/80 border-rose-300'
-                  : 'bg-sky-50/60 border-sky-200/80'
-              }`}
-            >
+            {/* Water Summary Box */}
+            <div className="rounded-xl p-2.5 border bg-sky-50/60 border-sky-200/80 space-y-1">
               <div className="flex items-center justify-between gap-1">
                 <span className="font-black text-sky-950 flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
                   <Droplet className="w-4 h-4 text-sky-500 fill-sky-500 shrink-0" />
@@ -351,74 +248,58 @@ export const RoomCard: React.FC<RoomCardProps> = ({
                   {wUsage} m³
                 </span>
               </div>
-              <div className="flex items-center justify-between text-slate-700 font-mono text-xs">
-                <span className="text-slate-400 font-bold">{numWStart} ➔</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  data-room-id={room.id}
-                  data-field="water"
-                  value={waterEndInput}
-                  onChange={(e) => setWaterEndInput(e.target.value)}
-                  onBlur={handleSaveMeters}
-                  onKeyDown={handleWaterKeyDown}
-                  onFocus={(e) => e.target.select()}
-                  className={`w-20 px-2 py-1.5 bg-white border rounded-lg text-right font-black focus:outline-none text-xs sm:text-sm min-h-[44px] ${
-                    isWaterInvalid
-                      ? 'border-rose-500 text-rose-950 focus:ring-2 focus:ring-rose-500'
-                      : 'border-sky-300 text-slate-900 focus:ring-1 focus:ring-sky-500'
-                  }`}
-                  placeholder="Số mới"
-                />
+              <div className="flex items-center justify-between text-slate-700 font-mono text-xs pt-0.5">
+                <span className="text-slate-500 font-bold">{numWStart}</span>
+                <span className="text-slate-400 font-sans">➔</span>
+                <span className="font-black text-sky-950 bg-white px-2 py-0.5 rounded border border-sky-300">
+                  {numWEnd}
+                </span>
               </div>
-              {isWaterInvalid ? (
-                <p className="text-[11px] font-bold text-rose-600 text-right">
-                  ⚠️ Số mới thấp hơn số cũ!
-                </p>
-              ) : (
-                <div className="text-xs text-sky-950 font-black text-right tabular-nums">
-                  {formatVND(wTotalCost)}
-                </div>
-              )}
+              <div className="text-xs text-sky-950 font-black text-right tabular-nums pt-0.5">
+                {formatVND(wTotalCost)}
+              </div>
             </div>
           </div>
         )}
 
-        {/* MATH TRANSPARENCY: SERVICE FEES / ADJUSTMENTS ROW */}
+        {/* SERVICE FEES / ADJUSTMENTS ROW (READ-ONLY ON CARD) */}
         {isRented && (
-          <div
-            className="bg-slate-50/80 p-2 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span className="text-slate-600 font-bold flex items-center gap-1 truncate">
-              <span>Phí dịch vụ / Điều chỉnh (Rác, Wifi...):</span>
+          <div className="bg-slate-50/80 p-2 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
+            <span className="text-slate-600 font-bold truncate">
+              Phí dịch vụ (Rác, Wifi, Khác...):
             </span>
-            <div className="flex items-center gap-1 shrink-0">
-              <span className="text-slate-400 font-bold">+</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={otherFeesNum > 0 ? otherFeesNum.toLocaleString('vi-VN') : '0'}
-                onChange={(e) => setOtherFeesInput(e.target.value.replace(/\D/g, ''))}
-                className="w-20 px-1.5 py-0.5 bg-white border border-slate-300 rounded font-mono font-bold text-slate-900 text-right text-xs focus:ring-1 focus:ring-indigo-500"
-                placeholder="0 đ"
-              />
-            </div>
+            <span className="font-mono font-black text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 shrink-0">
+              +{formatVND(otherFeesNum)}
+            </span>
           </div>
         )}
       </div>
 
       {/* FOOTER & ACTIONS */}
       <div className="pt-3 mt-2 border-t border-slate-100 space-y-2.5">
-        <div className="flex items-baseline justify-between">
-          <span className="text-xs text-slate-600 font-bold">Tổng tiền kỳ này:</span>
-          <div className="flex items-center gap-1.5">
-            {saveSuccess && (
-              <span className="text-xs text-emerald-600 font-extrabold flex items-center gap-0.5">
-                <Check className="w-3.5 h-3.5" /> Đã lưu
-              </span>
-            )}
+        {/* TỔNG TIỀN KỲ NÀY - CHẠM VÀO ĐỂ MỞ HỘP THOẠI ĐIỀU CHỈNH DUY NHẤT */}
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            handleOpenDialog();
+          }}
+          className="bg-indigo-50/70 hover:bg-indigo-100/90 border border-indigo-200 hover:border-indigo-300 rounded-xl p-2.5 sm:p-3 cursor-pointer transition-all hover:shadow-xs group/total"
+          title="Chạm vào đây để mở hộp thoại điều chỉnh Chỉ số Điện, Nước và Phí dịch vụ"
+        >
+          <div className="flex items-center justify-between text-xs text-indigo-950 font-black mb-1">
+            <span className="flex items-center gap-1.5">
+              <Calculator className="w-4 h-4 text-indigo-600 shrink-0" />
+              <span>Tổng số tiền kỳ này:</span>
+            </span>
+            <span className="text-[11px] text-indigo-700 bg-white px-2 py-0.5 rounded-full border border-indigo-200 font-extrabold group-hover/total:bg-indigo-600 group-hover/total:text-white transition-colors flex items-center gap-1 shadow-2xs">
+              <SlidersHorizontal className="w-3 h-3" />
+              <span>Điều chỉnh</span>
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-[11px] text-slate-500 font-medium truncate pr-2">
+              (Phòng + Điện + Nước + DV)
+            </span>
             <span className="text-lg sm:text-2xl font-black text-slate-950 tracking-tight tabular-nums">
               {formatVND(totalBill)}
             </span>
@@ -430,15 +311,15 @@ export const RoomCard: React.FC<RoomCardProps> = ({
           {isRented && onOpenZalo ? (
             <button
               onClick={() => onOpenZalo(room.id)}
-              className="py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors min-h-[44px]"
+              className="py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors min-h-[44px] cursor-pointer"
             >
               <MessageCircle className="w-4 h-4 text-blue-600" />
               <span>Gửi Zalo</span>
             </button>
           ) : (
             <button
-              onClick={() => onViewDetails(room)}
-              className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs sm:text-sm transition-colors min-h-[44px]"
+              onClick={handleOpenDialog}
+              className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs sm:text-sm transition-colors min-h-[44px] cursor-pointer"
             >
               <span>Chi tiết</span>
             </button>
@@ -447,7 +328,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({
           <button
             onClick={() => onCollect(room.id)}
             disabled={!isRented}
-            className={`py-2.5 px-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-2xs min-h-[44px] ${
+            className={`py-2.5 px-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-2xs min-h-[44px] cursor-pointer ${
               !isRented
                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                 : isPaid

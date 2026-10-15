@@ -7,6 +7,7 @@ import {
   User,
   MeterReading,
   Invoice,
+  InvoiceItem,
   Payment,
   HouseExpense,
   MaintenanceTicket,
@@ -567,4 +568,186 @@ export function rollForwardPeriodClient(db: AppDatabase, currentPeriod: string):
 
   saveClientFallbackDb(newDb);
   return { db: newDb, nextPeriod };
+}
+
+export interface RoomBillingUpdatePayload {
+  roomId: string;
+  periodMonth: string;
+  roomRent: number;
+  electricStart: number;
+  electricEnd: number;
+  electricRate: number;
+  waterStart: number;
+  waterEnd: number;
+  waterRate: number;
+  garbageFee: number;
+  internetFee: number;
+  otherFee?: number;
+}
+
+/**
+ * Updates room rent, electricity readings, water readings, and service fees in one single transaction.
+ * Saves to localStorage and syncs with Supabase non-blockingly.
+ */
+export function updateRoomBillingClient(
+  db: AppDatabase,
+  payload: RoomBillingUpdatePayload
+): { db: AppDatabase; meter: MeterReading; invoice: Invoice } {
+  const updatedRooms = [...db.rooms];
+  const updatedMeters = [...db.meterReadings];
+  const updatedInvoices = [...db.invoices];
+
+  const roomIdx = updatedRooms.findIndex((r) => r.id === payload.roomId);
+  if (roomIdx === -1) {
+    throw new Error('Không tìm thấy phòng');
+  }
+
+  const room = { ...updatedRooms[roomIdx] };
+  room.currentRent = payload.roomRent;
+  room.currentMeter = {
+    electricNumber: payload.electricEnd,
+    waterNumber: payload.waterEnd,
+    electricLastRecordedDate: new Date().toISOString().slice(0, 10),
+    waterLastRecordedDate: new Date().toISOString().slice(0, 10),
+  };
+  updatedRooms[roomIdx] = room;
+
+  // Meter calculations
+  const eUsage = Math.max(0, payload.electricEnd - payload.electricStart);
+  const wUsage = Math.max(0, payload.waterEnd - payload.waterStart);
+  const eTotal = eUsage * payload.electricRate;
+  const wTotal = wUsage * payload.waterRate;
+
+  const meterIdx = updatedMeters.findIndex(
+    (m) => m.roomId === payload.roomId && m.period === payload.periodMonth
+  );
+
+  const newMeter: MeterReading = {
+    id: meterIdx !== -1 ? updatedMeters[meterIdx].id : `meter-${room.code}-${payload.periodMonth.replace('-', '')}`,
+    roomId: payload.roomId,
+    period: payload.periodMonth,
+    electricStart: payload.electricStart,
+    electricEnd: payload.electricEnd,
+    electricUsage: eUsage,
+    electricRate: payload.electricRate,
+    electricTotal: eTotal,
+    waterStart: payload.waterStart,
+    waterEnd: payload.waterEnd,
+    waterUsage: wUsage,
+    waterRate: payload.waterRate,
+    waterTotal: wTotal,
+    waterBillingType: 'meter',
+    isAnomaly: false,
+    isConfirmed: true,
+    recordedBy: 'user-landlord',
+    recordedDate: new Date().toISOString().slice(0, 10),
+  };
+
+  if (meterIdx !== -1) {
+    updatedMeters[meterIdx] = newMeter;
+  } else {
+    updatedMeters.push(newMeter);
+  }
+
+  // Invoice calculations
+  const [y, m] = payload.periodMonth.split('-');
+  const code = room.code;
+  const invIdx = updatedInvoices.findIndex(
+    (i) => i.roomId === payload.roomId && i.periodMonth === payload.periodMonth
+  );
+  const existingInv = invIdx !== -1 ? updatedInvoices[invIdx] : null;
+
+  const stay = (db.tenancies || []).find((s) => s.id === room.currentStayId);
+  const tenantMeta = VIETNAMESE_TENANT_NAMES[code];
+  const repName = stay?.representativeName || tenantMeta?.name || `Phòng ${code}`;
+
+  const items: InvoiceItem[] = [
+    {
+      id: `item-${code}-rent-${payload.periodMonth}`,
+      type: 'rent' as const,
+      name: `Tiền thuê phòng tháng ${m}/${y}`,
+      amount: payload.roomRent,
+    },
+    {
+      id: `item-${code}-elec-${payload.periodMonth}`,
+      type: 'electricity' as const,
+      name: `Điện (${eUsage} kWh x ${payload.electricRate.toLocaleString('vi-VN')} đ)`,
+      quantity: eUsage,
+      unitPrice: payload.electricRate,
+      amount: eTotal,
+    },
+    {
+      id: `item-${code}-water-${payload.periodMonth}`,
+      type: 'water' as const,
+      name: `Nước (${wUsage} m³ x ${payload.waterRate.toLocaleString('vi-VN')} đ)`,
+      quantity: wUsage,
+      unitPrice: payload.waterRate,
+      amount: wTotal,
+    },
+    {
+      id: `item-${code}-garb-${payload.periodMonth}`,
+      type: 'garbage' as const,
+      name: 'Rác vệ sinh',
+      amount: payload.garbageFee,
+    },
+    {
+      id: `item-${code}-net-${payload.periodMonth}`,
+      type: 'internet' as const,
+      name: 'Wifi Internet',
+      amount: payload.internetFee,
+    },
+  ];
+
+  if (payload.otherFee && payload.otherFee > 0) {
+    items.push({
+      id: `item-${code}-other-${payload.periodMonth}`,
+      type: 'other' as const,
+      name: 'Phụ phí / Điều chỉnh',
+      amount: payload.otherFee,
+    });
+  }
+
+  const currentCycleTotal = items.reduce((s, it) => s + it.amount, 0);
+  const paidAmount = existingInv ? existingInv.paidAmount : 0;
+  const remainingBalance = Math.max(0, currentCycleTotal - paidAmount);
+  const paymentStatus: 'unpaid' | 'partial' | 'paid' =
+    remainingBalance <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid';
+
+  const newInvoice: Invoice = {
+    id: existingInv ? existingInv.id : `inv-${code}-${payload.periodMonth.replace('-', '')}`,
+    invoiceCode: existingInv ? existingInv.invoiceCode : `HD-${payload.periodMonth.replace('-', '')}-${code}`,
+    roomId: payload.roomId,
+    stayId: room.currentStayId || `stay-${code}-01`,
+    periodMonth: payload.periodMonth,
+    status: existingInv?.status || 'draft',
+    paymentStatus,
+    createdDate: existingInv?.createdDate || new Date().toISOString().slice(0, 10),
+    dueDate: `${y}-${m}-10`,
+    items,
+    currentCycleTotal,
+    previousDebt: existingInv?.previousDebt || 0,
+    appliedAdvance: existingInv?.appliedAdvance || 0,
+    paidAmount,
+    remainingBalance,
+    payerName: repName,
+    version: (existingInv?.version || 1) + 1,
+  };
+
+  if (invIdx !== -1) {
+    updatedInvoices[invIdx] = newInvoice;
+  } else {
+    updatedInvoices.push(newInvoice);
+  }
+
+  const newDb: AppDatabase = {
+    ...db,
+    rooms: updatedRooms,
+    meterReadings: updatedMeters,
+    invoices: updatedInvoices,
+    version: (db.version || 1) + 1,
+    lastBackupDate: new Date().toISOString(),
+  };
+
+  saveClientFallbackDb(newDb);
+  return { db: newDb, meter: newMeter, invoice: newInvoice };
 }

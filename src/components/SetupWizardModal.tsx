@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
+  Type,
 } from 'lucide-react';
 
 interface SetupWizardModalProps {
@@ -40,6 +41,23 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
 
   const [elecRate, setElecRate] = useState(currentProfile.electricityDefaultRate.toString());
   const [waterRate, setWaterRate] = useState(currentProfile.waterDefaultRate.toString());
+  const [textScale, setTextScale] = useState<'sm' | 'md' | 'lg'>(() => {
+    try {
+      const saved = localStorage.getItem('troxanh_text_height');
+      if (saved === 'sm' || saved === 'md' || saved === 'lg') return saved;
+    } catch {}
+    return 'md';
+  });
+
+  const handleTextScaleChange = (scale: 'sm' | 'md' | 'lg') => {
+    setTextScale(scale);
+    try {
+      localStorage.setItem('troxanh_text_height', scale);
+    } catch {}
+    const root = document.documentElement;
+    root.classList.remove('text-scale-sm', 'text-scale-md', 'text-scale-lg');
+    root.classList.add(`text-scale-${scale}`);
+  };
 
   const [saving, setSaving] = useState(false);
 
@@ -139,6 +157,52 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
                     onChange={(e) => setOwnerPhone(e.target.value)}
                     className="w-full bg-slate-850 border border-slate-700 rounded-lg p-2 text-white font-semibold"
                   />
+                </div>
+              </div>
+
+              {/* 3 Lựa chọn Chiều cao & Cỡ chữ */}
+              <div className="pt-2 border-t border-slate-800 space-y-1.5">
+                <label className="block text-slate-300 font-bold flex items-center gap-1.5">
+                  <Type className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Chiều cao & kích cỡ chữ hiển thị (Toàn ứng dụng):</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleTextScaleChange('sm')}
+                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      textScale === 'sm'
+                        ? 'bg-emerald-600/25 border-emerald-500 text-emerald-300 font-black ring-1 ring-emerald-500 shadow-sm'
+                        : 'bg-slate-850 border-slate-750 text-slate-400 hover:text-white hover:border-slate-600'
+                    }`}
+                  >
+                    <div className="text-xs font-black">Nhỏ (14px)</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">Dòng 1.35 • Gọn</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTextScaleChange('md')}
+                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      textScale === 'md'
+                        ? 'bg-emerald-600/25 border-emerald-500 text-emerald-300 font-black ring-1 ring-emerald-500 shadow-sm'
+                        : 'bg-slate-850 border-slate-750 text-slate-400 hover:text-white hover:border-slate-600'
+                    }`}
+                  >
+                    <div className="text-xs font-black">Vừa (16px)</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">Dòng 1.5 • Chuẩn</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTextScaleChange('lg')}
+                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      textScale === 'lg'
+                        ? 'bg-emerald-600/25 border-emerald-500 text-emerald-300 font-black ring-1 ring-emerald-500 shadow-sm'
+                        : 'bg-slate-850 border-slate-750 text-slate-400 hover:text-white hover:border-slate-600'
+                    }`}
+                  >
+                    <div className="text-xs font-black">Lớn (18px)</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">Dòng 1.65 • Rõ</div>
+                  </button>
                 </div>
               </div>
             </div>

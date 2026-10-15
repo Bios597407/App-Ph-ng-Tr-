@@ -126,16 +126,20 @@ export const RoomDetailModal: React.FC<RoomDetailModalProps> = ({
         });
       }
 
-      // Record meter reading
-      await api.recordMeter({
+      // Update billing, meters, and invoice
+      await api.updateRoomBilling({
         roomId: room.id,
-        period: currentPeriod,
+        periodMonth: currentPeriod,
+        roomRent: rentNum,
         electricStart: numEStart,
         electricEnd: numEEnd,
+        electricRate: eRate,
         waterStart: numWStart,
         waterEnd: numWEnd,
-        electricRate: eRate,
         waterRate: wRate,
+        garbageFee: 30000,
+        internetFee: 50000,
+        otherFee: serviceFeeNum > 80000 ? serviceFeeNum - 80000 : 0,
       });
 
       setSaveSuccess(true);

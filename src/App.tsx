@@ -39,6 +39,7 @@ import { BackupRestoreModal } from './components/BackupRestoreModal.tsx';
 import { AuditLogModal } from './components/AuditLogModal.tsx';
 import { SetupWizardModal } from './components/SetupWizardModal.tsx';
 import { ZaloCalculatorModal } from './components/ZaloCalculatorModal.tsx';
+import { BillingAdjustmentModal } from './components/BillingAdjustmentModal.tsx';
 
 // Icons
 import {
@@ -57,6 +58,7 @@ import {
   Users,
   Calendar,
   Palette,
+  Type,
 } from 'lucide-react';
 
 export default function App() {
@@ -82,6 +84,22 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'unpaid' | 'paid' | 'vacant'>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [themeBg, setThemeBg] = useState<'xanh-ngoc' | 'xanh-duong' | 'xanh-sky' | 'xanh-navy'>('xanh-ngoc');
+  const [textHeight, setTextHeight] = useState<'sm' | 'md' | 'lg'>(() => {
+    try {
+      const saved = localStorage.getItem('troxanh_text_height');
+      if (saved === 'sm' || saved === 'md' || saved === 'lg') return saved;
+    } catch {}
+    return 'md';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('troxanh_text_height', textHeight);
+    } catch {}
+    const root = document.documentElement;
+    root.classList.remove('text-scale-sm', 'text-scale-md', 'text-scale-lg');
+    root.classList.add(`text-scale-${textHeight}`);
+  }, [textHeight]);
 
   const bgClassMap = {
     'xanh-ngoc': 'bg-[#EAF5F1] text-slate-900',
@@ -94,6 +112,7 @@ export default function App() {
   const [collectRoomId, setCollectRoomId] = useState<string | null>(null);
   const [activeReceiptPayment, setActiveReceiptPayment] = useState<Payment | null>(null);
   const [detailRoom, setDetailRoom] = useState<Room | null>(null);
+  const [adjustmentRoom, setAdjustmentRoom] = useState<Room | null>(null);
   const [showWalkthrough, setShowWalkthrough] = useState<boolean>(false);
   const [showTestSuite, setShowTestSuite] = useState<boolean>(false);
   const [showReminder, setShowReminder] = useState<boolean>(false);
@@ -372,7 +391,42 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-300 font-medium">{currentUser.fullName}</span>
+            {/* 3 Lựa chọn Chiều cao chữ (Tenant Portal) */}
+            <div className="flex items-center gap-0.5 bg-slate-800 p-1 rounded-xl border border-slate-700 shadow-2xs">
+              <Type className="w-3.5 h-3.5 text-emerald-400 mx-1 shrink-0" />
+              <button
+                type="button"
+                onClick={() => setTextHeight('sm')}
+                className={`px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
+                  textHeight === 'sm' ? 'bg-emerald-600 text-white font-black' : 'text-slate-400 hover:text-white'
+                }`}
+                title="Chiều cao chữ: Nhỏ (14px - dòng 1.35)"
+              >
+                Nhỏ
+              </button>
+              <button
+                type="button"
+                onClick={() => setTextHeight('md')}
+                className={`px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
+                  textHeight === 'md' ? 'bg-emerald-600 text-white font-black' : 'text-slate-400 hover:text-white'
+                }`}
+                title="Chiều cao chữ: Vừa (16px - dòng 1.5)"
+              >
+                Vừa
+              </button>
+              <button
+                type="button"
+                onClick={() => setTextHeight('lg')}
+                className={`px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
+                  textHeight === 'lg' ? 'bg-emerald-600 text-white font-black' : 'text-slate-400 hover:text-white'
+                }`}
+                title="Chiều cao chữ: Lớn (18px - dòng 1.65)"
+              >
+                Lớn
+              </button>
+            </div>
+
+            <span className="text-xs text-slate-300 font-medium hidden sm:inline">{currentUser.fullName}</span>
             <button
               onClick={() => handleSwitchUserRole('chutro')}
               className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-white text-xs flex items-center gap-1 transition-colors"
@@ -430,6 +484,53 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* 3 Lựa chọn Chiều cao chữ (Text Height Selector) */}
+            <div
+              className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80 shadow-2xs"
+              title="3 lựa chọn chiều cao & kích cỡ chữ cho toàn bộ ứng dụng"
+            >
+              <div className="flex items-center gap-1 px-1.5 text-slate-600 font-bold text-xs" title="Độ cao chữ / Kích cỡ">
+                <Type className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <span className="hidden xl:inline text-[11px] font-extrabold uppercase tracking-wider text-slate-700">Cỡ chữ:</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTextHeight('sm')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  textHeight === 'sm'
+                    ? 'bg-white text-indigo-700 shadow-xs font-black ring-1 ring-slate-200'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
+                title="Lựa chọn 1: Chiều cao chữ Nhỏ (14px - Dòng cao 1.35) - Gọn gàng, hiển thị nhiều dữ liệu"
+              >
+                <span className="text-[11px]">Nhỏ</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTextHeight('md')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  textHeight === 'md'
+                    ? 'bg-white text-indigo-700 shadow-xs font-black ring-1 ring-slate-200'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
+                title="Lựa chọn 2: Chiều cao chữ Tiêu chuẩn (16px - Dòng cao 1.5) - Mặc định, cân đối hài hòa"
+              >
+                <span className="text-xs">Vừa</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTextHeight('lg')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  textHeight === 'lg'
+                    ? 'bg-white text-indigo-700 shadow-xs font-black ring-1 ring-slate-200'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
+                title="Lựa chọn 3: Chiều cao chữ Lớn (18px - Dòng cao 1.65) - Rõ nét, thoáng rộng, dễ đọc"
+              >
+                <span className="text-sm font-black">Lớn</span>
+              </button>
+            </div>
+
             {/* Color Dots Theme Selector (24x24px) */}
             <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200/80">
               <button
@@ -678,7 +779,8 @@ export default function App() {
                   currentStayId={stay?.id}
                   currentPeriod={currentPeriod}
                   onCollect={(rId) => setCollectRoomId(rId)}
-                  onViewDetails={(r) => setDetailRoom(r)}
+                  onViewDetails={(r) => setAdjustmentRoom(r)}
+                  onOpenAdjustment={(r) => setAdjustmentRoom(r)}
                   onOpenZalo={(rId) => setZaloCalcRoomId(rId)}
                   onRefresh={loadAllData}
                 />
@@ -693,7 +795,8 @@ export default function App() {
             tenancies={tenancies}
             currentPeriod={currentPeriod}
             onCollect={(rId) => setCollectRoomId(rId)}
-            onViewDetails={(r) => setDetailRoom(r)}
+            onViewDetails={(r) => setAdjustmentRoom(r)}
+            onOpenAdjustment={(r) => setAdjustmentRoom(r)}
             onOpenZalo={(rId) => setZaloCalcRoomId(rId)}
             onWalkthrough={() => setShowWalkthrough(true)}
             onRefresh={loadAllData}
@@ -732,6 +835,41 @@ export default function App() {
           onSuccess={() => {
             setShowWalkthrough(false);
             loadAllData();
+          }}
+        />
+      )}
+
+      {adjustmentRoom && (
+        <BillingAdjustmentModal
+          room={adjustmentRoom}
+          currentInvoice={invoices.find(
+            (i) => i.roomId === adjustmentRoom.id && i.periodMonth === currentPeriod
+          )}
+          meterReading={meters.find(
+            (m) => m.roomId === adjustmentRoom.id && m.period === currentPeriod
+          )}
+          tenantName={
+            tenancies.find((s) => s.id === adjustmentRoom.currentStayId)?.representativeName ||
+            VIETNAMESE_TENANT_NAMES[adjustmentRoom.code]?.name ||
+            'Khách thuê'
+          }
+          tenantPhone={
+            tenancies.find((s) => s.id === adjustmentRoom.currentStayId)?.representativePhone ||
+            VIETNAMESE_TENANT_NAMES[adjustmentRoom.code]?.phone ||
+            ''
+          }
+          currentPeriod={currentPeriod}
+          onClose={() => setAdjustmentRoom(null)}
+          onSuccess={() => {
+            loadAllData();
+          }}
+          onOpenZalo={(rId) => {
+            setAdjustmentRoom(null);
+            setZaloCalcRoomId(rId);
+          }}
+          onCollect={(rId) => {
+            setAdjustmentRoom(null);
+            setCollectRoomId(rId);
           }}
         />
       )}

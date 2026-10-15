@@ -12,6 +12,8 @@
   /* Smooth body backdrop with ambient radial gradient overlay */
   body {
     min-height: 100vh;
+    font-size: var(--app-font-size, 16px);
+    line-height: var(--app-line-height, 1.5);
     background: 
       radial-gradient(120% 80% at 50% -20%, rgba(16, 185, 129, 0.08), transparent 70%),
       radial-gradient(100% 60% at 100% 100%, rgba(99, 102, 241, 0.06), transparent 60%),
@@ -19,10 +21,45 @@
     background-attachment: fixed;
   }
 
-  /* Prevent auto zoom on iOS/Android while keeping 16px font size */
+  /* Prevent auto zoom on iOS/Android while keeping responsive font size */
   input, select, textarea {
-    font-size: 16px;
+    font-size: max(16px, 1rem);
+    line-height: var(--app-line-height, 1.5);
   }
+}
+
+/* 3 Cấp độ Chiều cao & Kích cỡ chữ toàn ứng dụng */
+:root {
+  --app-font-size: 16px;
+  --app-line-height: 1.5;
+}
+
+html {
+  transition: font-size 0.15s ease, line-height 0.15s ease;
+}
+
+/* Lựa chọn 1: Nhỏ gọn (14px - Dòng cao 1.35 - Gọn gàng, hiển thị nhiều dữ liệu) */
+html.text-scale-sm {
+  font-size: 14px;
+  line-height: 1.35;
+  --app-font-size: 14px;
+  --app-line-height: 1.35;
+}
+
+/* Lựa chọn 2: Tiêu chuẩn (16px - Dòng cao 1.5 - Mặc định, cân đối) */
+html.text-scale-md {
+  font-size: 16px;
+  line-height: 1.5;
+  --app-font-size: 16px;
+  --app-line-height: 1.5;
+}
+
+/* Lựa chọn 3: Lớn & Rõ (18px - Dòng cao 1.65 - Chữ to, thoáng, cực kỳ dễ đọc) */
+html.text-scale-lg {
+  font-size: 18px;
+  line-height: 1.65;
+  --app-font-size: 18px;
+  --app-line-height: 1.65;
 }
 
 /* Glassmorphism & Light Theme Utilities */

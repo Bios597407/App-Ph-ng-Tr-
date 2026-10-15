@@ -14,7 +14,12 @@ import {
   MaintenanceTicket,
   AuditLogItem,
 } from '../types/index.ts';
-import { getClientFallbackDb, saveClientFallbackDb } from '../utils/clientDbFallback.ts';
+import {
+  getClientFallbackDb,
+  saveClientFallbackDb,
+  updateRoomBillingClient,
+  RoomBillingUpdatePayload,
+} from '../utils/clientDbFallback.ts';
 
 const TOKEN_KEY = 'troxanh_auth_token';
 const OFFLINE_CACHE_KEY = 'troxanh_offline_cache';
@@ -418,6 +423,24 @@ export class ApiClient {
         await this.recordMeter({ ...r, period });
       }
       return { success: true, savedCount: readings.length };
+    }
+  }
+
+  async updateRoomBilling(payload: RoomBillingUpdatePayload): Promise<{ success: boolean; meter: MeterReading; invoice: Invoice }> {
+    try {
+      const res = await this.request<{ success: boolean; meter: MeterReading; invoice: Invoice }>('/meters/billing-update', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        silent: true,
+      });
+      if (res && res.meter) return res;
+      const db = getClientFallbackDb();
+      const updated = updateRoomBillingClient(db, payload);
+      return { success: true, meter: updated.meter, invoice: updated.invoice };
+    } catch {
+      const db = getClientFallbackDb();
+      const updated = updateRoomBillingClient(db, payload);
+      return { success: true, meter: updated.meter, invoice: updated.invoice };
     }
   }
 

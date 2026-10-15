@@ -24,6 +24,7 @@ interface RoomSpreadsheetViewProps {
   currentPeriod: string;
   onCollect: (roomId: string) => void;
   onViewDetails: (room: Room) => void;
+  onOpenAdjustment?: (room: Room) => void;
   onOpenZalo: (roomId: string) => void;
   onWalkthrough: () => void;
   onRefresh?: () => void;
@@ -45,6 +46,7 @@ export const RoomSpreadsheetView: React.FC<RoomSpreadsheetViewProps> = ({
   currentPeriod,
   onCollect,
   onViewDetails,
+  onOpenAdjustment,
   onOpenZalo,
   onWalkthrough,
   onRefresh,
@@ -361,9 +363,16 @@ export const RoomSpreadsheetView: React.FC<RoomSpreadsheetViewProps> = ({
                     </div>
                   </td>
 
-                  {/* Total Bill Calculation */}
-                  <td className="py-2.5 px-3 text-right font-black text-slate-900 tabular-nums text-xs">
-                    {formatVND(inv ? inv.currentCycleTotal : calcTotal)}
+                  {/* Total Bill Calculation - Click to open Adjustment Dialog */}
+                  <td
+                    onClick={() => (onOpenAdjustment ? onOpenAdjustment(room) : onViewDetails(room))}
+                    className="py-2.5 px-3 text-right font-black text-slate-900 tabular-nums text-xs cursor-pointer hover:bg-indigo-50 transition-colors"
+                    title="Chạm vào để mở hộp thoại điều chỉnh chỉ số điện nước & phí"
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <span>{formatVND(inv ? inv.currentCycleTotal : calcTotal)}</span>
+                      <Edit3 className="w-3 h-3 text-indigo-500 opacity-70" />
+                    </div>
                   </td>
 
                   {/* Status */}
