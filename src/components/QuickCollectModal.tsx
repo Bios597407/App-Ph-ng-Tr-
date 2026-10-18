@@ -226,12 +226,16 @@ export const QuickCollectModal: React.FC<QuickCollectModalProps> = ({
                       </div>
 
                       {/* Service fees */}
-                      {serviceAmt > 0 && (
-                        <div className="flex justify-between items-center bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-750">
-                          <span>🗑️ Phí dịch vụ (Rác, Wifi, Phụ phí):</span>
-                          <span className="font-extrabold text-teal-300">{formatVND(serviceAmt)}</span>
-                        </div>
-                      )}
+                      <div className="flex justify-between items-center bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-750">
+                        <span>🗑️ Phí dịch vụ (Rác, Wifi, Phụ phí):</span>
+                        <span className="font-extrabold text-teal-300">+{formatVND(serviceAmt)}</span>
+                      </div>
+
+                      {/* Current Cycle Total */}
+                      <div className="flex justify-between items-center bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-700 font-extrabold text-white">
+                        <span>📊 Tổng phát sinh kỳ này:</span>
+                        <span className="font-mono">{formatVND(activeInv.currentCycleTotal)}</span>
+                      </div>
 
                       {/* Previous Debt */}
                       {activeInv.previousDebt > 0 && (

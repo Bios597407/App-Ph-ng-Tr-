@@ -104,7 +104,20 @@ export const ZaloCalculatorModal: React.FC<ZaloCalculatorModalProps> = ({
   const waterUsage = waterEnd >= waterStart ? waterEnd - waterStart : waterEnd;
   const waterTotal = waterUsage * wRate;
 
-  const totalAmount = electricTotal + waterTotal + baseRentNum;
+  // Service fees
+  const garbageFee = profile.garbageDefaultFee || 0;
+  const internetFee = profile.internetDefaultFee || 0;
+  const otherFee = existingInvoice?.items.find((i) => i.type === 'other')?.amount || 0;
+  const totalServiceFees = garbageFee + internetFee + otherFee;
+
+  // Previous debt and paid amounts from existing invoice
+  const previousDebt = existingInvoice?.previousDebt || 0;
+  const paidAmount = existingInvoice?.paidAmount || 0;
+
+  // Exact calculations
+  const currentCycleTotal = baseRentNum + electricTotal + waterTotal + totalServiceFees;
+  const totalBill = currentCycleTotal + previousDebt;
+  const remainingBalance = Math.max(0, totalBill - paidAmount);
 
   // Editable Bank Transfer Info
   const [bankName, setBankName] = useState<string>(profile.bankAccount?.bankName || 'MB Bank');
@@ -119,18 +132,25 @@ export const ZaloCalculatorModal: React.FC<ZaloCalculatorModalProps> = ({
   const zaloMessage = `[HÓA ĐƠN TIỀN NHÀ] PHIẾU BÁO TIỀN THÁNG ${monthNumStr}/${yearStr}
 Phòng: ${selectedRoom?.code || 'P01'} - ${selectedRoom?.name || ''}
 ----------------------------------------
-🏠 TIỀN PHÒNG GỐC: ${formatVND(baseRentNum)}
+🏠 1. TIỀN PHÒNG GỐC: ${formatVND(baseRentNum)}
 
-⚡ TIỀN ĐIỆN (${formatVND(eRate)}/kWh):
+⚡ 2. TIỀN ĐIỆN (${formatVND(eRate)}/kWh):
 • Số cũ: ${electricStart} ➔ Số mới: ${electricEnd}
 => Sử dụng: ${electricUsage} kWh = ${formatVND(electricTotal)}
 
-💧 TIỀN NƯỚC (${formatVND(wRate)}/m³):
+💧 3. TIỀN NƯỚC (${formatVND(wRate)}/m³):
 • Số cũ: ${waterStart} ➔ Số mới: ${waterEnd}
 => Sử dụng: ${waterUsage} m³ = ${formatVND(waterTotal)}
 
-========================================
-💰 TỔNG THỜI HẠN THANH TOÁN: ${formatVND(totalAmount)}
+🏢 4. PHÍ DỊCH VỤ (Rác, Wifi, Khác...):
+• Phí rác: ${formatVND(garbageFee)}
+• Phí internet/Wifi: ${formatVND(internetFee)}
+${otherFee > 0 ? `• Phí khác: ${formatVND(otherFee)}\n` : ''}=> Tổng phí dịch vụ: +${formatVND(totalServiceFees)}
+
+----------------------------------------
+📊 5. TỔNG PHÁT SINH KỲ NÀY: ${formatVND(currentCycleTotal)}
+${previousDebt > 0 ? `➕ 6. Nợ cũ kỳ trước: +${formatVND(previousDebt)}\n` : ''}${paidAmount > 0 ? `🔻 7. Đã thanh toán đợt trước: -${formatVND(paidAmount)}\n` : ''}========================================
+💰 8. TỔNG CÒN PHẢI THU: ${formatVND(remainingBalance)}
 ----------------------------------------
 🏦 THÔNG TIN CHUYỂN KHOẢN:
 • Ngân hàng: ${bankName}
@@ -415,11 +435,40 @@ Hạn đóng tiền: Ngày 10/${monthNumStr}. Trân trọng cảm ơn!`;
                 <span className="font-bold font-mono tabular-nums">{formatVND(waterTotal)}</span>
               </div>
 
+              <div className="flex justify-between items-center py-1.5 border-b border-slate-100 font-medium">
+                <span className="text-slate-700">
+                  4. Phí dịch vụ (Rác: {formatVND(garbageFee)}, Wifi: {formatVND(internetFee)}
+                  {otherFee > 0 ? `, Khác: ${formatVND(otherFee)}` : ''}):
+                </span>
+                <span className="font-bold font-mono tabular-nums text-slate-800">
+                  +{formatVND(totalServiceFees)}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center py-1.5 bg-slate-50 px-2 rounded border border-slate-200 font-extrabold text-slate-900">
+                <span>5. Tổng phát sinh kỳ này:</span>
+                <span className="font-mono tabular-nums">{formatVND(currentCycleTotal)}</span>
+              </div>
+
+              {previousDebt > 0 && (
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100 font-medium text-amber-700">
+                  <span>6. Nợ cũ mang sang kỳ trước:</span>
+                  <span className="font-bold font-mono tabular-nums">+{formatVND(previousDebt)}</span>
+                </div>
+              )}
+
+              {paidAmount > 0 && (
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100 font-medium text-emerald-700">
+                  <span>7. Đã thanh toán đợt trước:</span>
+                  <span className="font-bold font-mono tabular-nums">-{formatVND(paidAmount)}</span>
+                </div>
+              )}
+
               {/* Total Row */}
               <div className="flex justify-between items-center py-3 border-t-2 border-slate-900 font-black text-sm">
-                <span className="text-slate-900">TỔNG CỘNG THANH TOÁN:</span>
+                <span className="text-slate-900">TỔNG CÒN PHẢI THU:</span>
                 <span className="text-indigo-700 text-lg font-mono tabular-nums">
-                  {formatVND(totalAmount)}
+                  {formatVND(remainingBalance)}
                 </span>
               </div>
             </div>
@@ -430,7 +479,7 @@ Hạn đóng tiền: Ngày 10/${monthNumStr}. Trân trọng cảm ơn!`;
                 {/* VietQR Code Image */}
                 <div className="bg-white p-2 rounded-xl border border-indigo-200 shadow-2xs shrink-0 text-center">
                   <img
-                    src={`https://img.vietqr.io/image/${profile.bankAccount?.bankId || 'MB'}-${accountNumber.trim()}-compact.png?amount=${totalAmount}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountHolder.trim())}`}
+                    src={`https://img.vietqr.io/image/${profile.bankAccount?.bankId || 'MB'}-${accountNumber.trim()}-compact.png?amount=${remainingBalance}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountHolder.trim())}`}
                     alt="VietQR Chuyển Khoản Tự Động"
                     className="w-28 h-28 object-contain mx-auto rounded"
                     onError={(e) => {

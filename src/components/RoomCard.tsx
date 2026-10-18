@@ -306,34 +306,45 @@ export const RoomCard: React.FC<RoomCardProps> = ({
 
       {/* FOOTER & ACTIONS */}
       <div className="pt-3 mt-2 border-t border-slate-100 space-y-2.5">
-        {/* TỔNG TIỀN KỲ NÀY - CHẠM VÀO ĐỂ MỞ HỘP THOẠI ĐIỀU CHỈNH DUY NHẤT */}
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            handleOpenDialog();
-          }}
-          className="bg-indigo-50/70 hover:bg-indigo-100/90 border border-indigo-200 hover:border-indigo-300 rounded-xl p-2.5 sm:p-3 cursor-pointer transition-all hover:shadow-xs group/total"
-          title="Chạm vào đây để mở hộp thoại điều chỉnh Chỉ số Điện, Nước và Phí dịch vụ"
-        >
-          <div className="flex items-center justify-between text-xs text-indigo-950 font-black mb-1">
-            <span className="flex items-center gap-1.5">
-              <Calculator className="w-4 h-4 text-indigo-600 shrink-0" />
-              <span>Tổng số tiền kỳ này:</span>
-            </span>
-            <span className="text-[11px] text-indigo-700 bg-white px-2 py-0.5 rounded-full border border-indigo-200 font-extrabold group-hover/total:bg-indigo-600 group-hover/total:text-white transition-colors flex items-center gap-1 shadow-2xs">
-              <SlidersHorizontal className="w-3 h-3" />
-              <span>Điều chỉnh</span>
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-[11px] text-slate-500 font-medium truncate pr-2">
-              (Phòng + Điện + Nước + DV)
-            </span>
-            <span className="text-lg sm:text-2xl font-black text-slate-950 tracking-tight tabular-nums">
-              {formatVND(totalBill)}
-            </span>
-          </div>
-        </div>
+        {/* TỔNG CÒN PHẢI THU - DÙNG CHUNG CẤU TRÚC ĐỒNG BỘ 100% VỚI HỘP THOẠI THU TIỀN & ZALO */}
+        {(() => {
+          const invPaid = currentInvoice?.paidAmount || 0;
+          const invPrevDebt = currentInvoice?.previousDebt || 0;
+          const cycleTotal = currentInvoice ? currentInvoice.currentCycleTotal : (room.currentRent + eTotalCost + wTotalCost + otherFeesNum);
+          const finalRemaining = currentInvoice ? currentInvoice.remainingBalance : Math.max(0, cycleTotal + invPrevDebt - invPaid);
+
+          return (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenDialog();
+              }}
+              className="bg-indigo-50/70 hover:bg-indigo-100/90 border border-indigo-200 hover:border-indigo-300 rounded-xl p-2.5 sm:p-3 cursor-pointer transition-all hover:shadow-xs group/total"
+              title="Chạm vào đây để mở hộp thoại điều chỉnh Chỉ số Điện, Nước và Phí dịch vụ"
+            >
+              <div className="flex items-center justify-between text-xs text-indigo-950 font-black mb-1">
+                <span className="flex items-center gap-1.5">
+                  <Calculator className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <span>Tổng còn phải thu:</span>
+                </span>
+                <span className="text-[11px] text-indigo-700 bg-white px-2 py-0.5 rounded-full border border-indigo-200 font-extrabold group-hover/total:bg-indigo-600 group-hover/total:text-white transition-colors flex items-center gap-1 shadow-2xs">
+                  <SlidersHorizontal className="w-3 h-3" />
+                  <span>Điều chỉnh</span>
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <div className="text-[11px] text-slate-600 font-medium truncate pr-2 space-x-1">
+                  <span>Phát sinh: <strong>{formatVND(cycleTotal)}</strong></span>
+                  {invPrevDebt > 0 && <span className="text-amber-700 font-bold">• Nợ: +{formatVND(invPrevDebt)}</span>}
+                  {invPaid > 0 && <span className="text-emerald-700 font-bold">• Đã nộp: -{formatVND(invPaid)}</span>}
+                </div>
+                <span className="text-lg sm:text-2xl font-black text-indigo-950 tracking-tight tabular-nums">
+                  {formatVND(finalRemaining)}
+                </span>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
