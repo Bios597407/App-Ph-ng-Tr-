@@ -493,7 +493,7 @@ export default function App() {
                 className={`px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
                   textHeight === 'sm' ? 'bg-emerald-600 text-white font-black' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Chiều cao chữ: Nhỏ (18px - dòng 1.35)"
+                title="Chiều cao chữ: Nhỏ (16px - dòng 1.35)"
               >
                 Nhỏ
               </button>
@@ -503,7 +503,7 @@ export default function App() {
                 className={`px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
                   textHeight === 'md' ? 'bg-emerald-600 text-white font-black' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Chiều cao chữ: Tiêu chuẩn (20px - dòng 1.5)"
+                title="Chiều cao chữ: Tiêu chuẩn (18px - dòng 1.5)"
               >
                 Vừa
               </button>
@@ -513,7 +513,7 @@ export default function App() {
                 className={`px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
                   textHeight === 'lg' ? 'bg-emerald-600 text-white font-black' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Chiều cao chữ: Lớn (22px - dòng 1.65)"
+                title="Chiều cao chữ: Lớn (20px - dòng 1.65)"
               >
                 Lớn
               </button>
@@ -647,7 +647,7 @@ export default function App() {
                     ? 'bg-white text-indigo-700 shadow-xs font-black ring-1 ring-slate-200'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
-                title="Cỡ chữ Nhỏ (18px - dòng 1.35)"
+                title="Cỡ chữ Nhỏ (16px - dòng 1.35)"
               >
                 Nhỏ
               </button>
@@ -659,7 +659,7 @@ export default function App() {
                     ? 'bg-white text-indigo-700 shadow-xs font-black ring-1 ring-slate-200'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
-                title="Cỡ chữ Tiêu chuẩn (20px - dòng 1.5)"
+                title="Cỡ chữ Tiêu chuẩn (18px - dòng 1.5)"
               >
                 Vừa
               </button>
@@ -671,7 +671,7 @@ export default function App() {
                     ? 'bg-white text-indigo-700 shadow-xs font-black ring-1 ring-slate-200'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
-                title="Cỡ chữ Lớn (22px - dòng 1.65)"
+                title="Cỡ chữ Lớn (20px - dòng 1.65)"
               >
                 Lớn
               </button>

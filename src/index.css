@@ -38,27 +38,27 @@ html {
   transition: font-size 0.15s ease, line-height 0.15s ease;
 }
 
-/* Lựa chọn 1: Nhỏ gọn (18px - Dòng cao 1.35) */
+/* Lựa chọn 1: Nhỏ gọn (16px - Dòng cao 1.35) */
 html.text-scale-sm {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.35;
-  --app-font-size: 18px;
+  --app-font-size: 16px;
   --app-line-height: 1.35;
 }
 
-/* Lựa chọn 2: Tiêu chuẩn (20px - Dòng cao 1.5) */
+/* Lựa chọn 2: Tiêu chuẩn (18px - Dòng cao 1.5) */
 html.text-scale-md {
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.5;
-  --app-font-size: 20px;
+  --app-font-size: 18px;
   --app-line-height: 1.5;
 }
 
-/* Lựa chọn 3: Lớn (22px - Dòng cao 1.65) */
+/* Lựa chọn 3: Lớn (20px - Dòng cao 1.65) */
 html.text-scale-lg {
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1.65;
-  --app-font-size: 22px;
+  --app-font-size: 20px;
   --app-line-height: 1.65;
 }
 
