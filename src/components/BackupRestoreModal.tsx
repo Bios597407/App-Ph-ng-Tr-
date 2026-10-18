@@ -92,6 +92,8 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ onClose,
     }
   };
 
+  const [pendingRestore, setPendingRestore] = useState<{ name: string; data: any } | null>(null);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -103,23 +105,32 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ onClose,
         if (!parsed.rooms || !parsed.profile) {
           throw new Error('Tệp không đúng định dạng cơ sở dữ liệu TroXanh 9P.');
         }
-
-        if (confirm(`Bạn có chắc chắn muốn phục hồi toàn bộ dữ liệu từ tệp "${file.name}"? Dữ liệu hiện tại sẽ được thay thế!`)) {
-          setRestoring(true);
-          const res = await api.restoreBackup(parsed);
-          setStatusMsg({
-            type: 'success',
-            text: `Phục hồi thành công! Đã nạp ${res.metrics.roomCount} phòng, ${res.metrics.invoiceCount} hóa đơn.`,
-          });
-          onRefresh();
-        }
+        setPendingRestore({ name: file.name, data: parsed });
       } catch (err: any) {
         setStatusMsg({ type: 'error', text: err.message || 'Lỗi đọc tệp sao lưu.' });
-      } finally {
-        setRestoring(false);
       }
     };
     reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleConfirmRestore = async () => {
+    if (!pendingRestore) return;
+    setRestoring(true);
+    setStatusMsg(null);
+    try {
+      const res = await api.restoreBackup(pendingRestore.data);
+      setStatusMsg({
+        type: 'success',
+        text: `Phục hồi thành công! Đã nạp ${res.metrics?.roomCount || 9} phòng, ${res.metrics?.invoiceCount || 0} hóa đơn.`,
+      });
+      setPendingRestore(null);
+      onRefresh();
+    } catch (err: any) {
+      setStatusMsg({ type: 'error', text: err.message || 'Lỗi đọc tệp sao lưu.' });
+    } finally {
+      setRestoring(false);
+    }
   };
 
   return (
@@ -282,17 +293,44 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ onClose,
                 </p>
               </div>
               <div className="pt-2">
-                <label className="w-full py-2 px-3 rounded-lg bg-teal-700 hover:bg-teal-600 cursor-pointer font-bold text-white text-xs flex items-center justify-center gap-1.5 transition-colors">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>{restoring ? 'Đang phục hồi...' : 'Chọn tệp sao lưu (.json)'}</span>
-                  <input
-                    type="file"
-                    accept=".json"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    disabled={restoring}
-                  />
-                </label>
+                {pendingRestore ? (
+                  <div className="p-2.5 rounded-lg bg-teal-950/80 border border-teal-650 space-y-2 animate-in fade-in">
+                    <p className="text-[11px] text-teal-200">
+                      Khôi phục từ: <strong className="text-white truncate block">{pendingRestore.name}</strong>? Dữ liệu hiện tại sẽ được thay thế hoàn toàn.
+                    </p>
+                    <div className="flex gap-2 justify-end pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setPendingRestore(null)}
+                        disabled={restoring}
+                        className="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium cursor-pointer"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleConfirmRestore}
+                        disabled={restoring}
+                        className="px-3 py-1 rounded-md bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1 shadow-sm cursor-pointer"
+                      >
+                        {restoring ? <RotateCcw className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                        <span>Khôi phục ngay</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="w-full py-2 px-3 rounded-lg bg-teal-700 hover:bg-teal-600 cursor-pointer font-bold text-white text-xs flex items-center justify-center gap-1.5 transition-colors">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{restoring ? 'Đang phục hồi...' : 'Chọn tệp sao lưu (.json)'}</span>
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={restoring}
+                    />
+                  </label>
+                )}
               </div>
             </div>
           </div>

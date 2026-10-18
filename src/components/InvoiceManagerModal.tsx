@@ -40,6 +40,8 @@ export const InvoiceManagerModal: React.FC<InvoiceManagerModalProps> = ({
   const [adjReason, setAdjReason] = useState('Giảm trừ cúp nước nửa ngày');
   const [savingAdj, setSavingAdj] = useState(false);
 
+  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   // Filters
   const [selectedPeriodFilter, setSelectedPeriodFilter] = useState<string>(currentPeriod);
   const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('all');
@@ -65,23 +67,29 @@ export const InvoiceManagerModal: React.FC<InvoiceManagerModalProps> = ({
 
   const handleGenerateInvoices = async () => {
     setGenerating(true);
+    setStatusMsg(null);
     try {
       await api.generateInvoices(selectedPeriodFilter !== 'all' ? selectedPeriodFilter : currentPeriod);
-      alert(`Đã tính toán và lập bảng tiền tháng ${selectedPeriodFilter !== 'all' ? selectedPeriodFilter : currentPeriod} cho các phòng!`);
+      setStatusMsg({
+        type: 'success',
+        text: `Đã tính toán và lập bảng tiền tháng ${selectedPeriodFilter !== 'all' ? selectedPeriodFilter : currentPeriod} cho các phòng!`,
+      });
       onRefresh();
     } catch (err: any) {
-      alert(err.message || 'Lỗi khi lập hóa đơn.');
+      setStatusMsg({ type: 'error', text: err.message || 'Lỗi khi lập hóa đơn.' });
     } finally {
       setGenerating(false);
     }
   };
 
   const handleLockInvoice = async (invoiceId: string) => {
+    setStatusMsg(null);
     try {
       await api.lockInvoice(invoiceId);
+      setStatusMsg({ type: 'success', text: 'Đã chốt hóa đơn thành công!' });
       onRefresh();
     } catch (err: any) {
-      alert(err.message || 'Lỗi khi chốt hóa đơn.');
+      setStatusMsg({ type: 'error', text: err.message || 'Lỗi khi chốt hóa đơn.' });
     }
   };
 
@@ -92,6 +100,7 @@ export const InvoiceManagerModal: React.FC<InvoiceManagerModalProps> = ({
     if (num <= 0 || !adjReason.trim()) return;
 
     setSavingAdj(true);
+    setStatusMsg(null);
     try {
       await api.adjustInvoice(adjustModalInv.id, {
         amount: num,
@@ -100,9 +109,10 @@ export const InvoiceManagerModal: React.FC<InvoiceManagerModalProps> = ({
       });
       setAdjustModalInv(null);
       setAdjAmount('');
+      setStatusMsg({ type: 'success', text: 'Đã lưu điều chỉnh hóa đơn thành công!' });
       onRefresh();
     } catch (err: any) {
-      alert(err.message || 'Lỗi khi điều chỉnh hóa đơn.');
+      setStatusMsg({ type: 'error', text: err.message || 'Lỗi khi điều chỉnh hóa đơn.' });
     } finally {
       setSavingAdj(false);
     }
@@ -133,6 +143,24 @@ export const InvoiceManagerModal: React.FC<InvoiceManagerModalProps> = ({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* In-Modal Alert Notification */}
+        {statusMsg && (
+          <div className={`px-4 py-2.5 text-xs font-semibold flex items-center justify-between border-b ${
+            statusMsg.type === 'success'
+              ? 'bg-emerald-950/80 border-emerald-800 text-emerald-300'
+              : 'bg-rose-950/80 border-rose-800 text-rose-300'
+          }`}>
+            <span>{statusMsg.text}</span>
+            <button
+              type="button"
+              onClick={() => setStatusMsg(null)}
+              className="text-slate-400 hover:text-white text-xs px-1"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Tab switcher: Danh sách vs Bảng đối chiếu đa kỳ */}
         <div className="bg-slate-850 px-4 py-2 border-b border-slate-800 flex items-center justify-between gap-3 shrink-0">

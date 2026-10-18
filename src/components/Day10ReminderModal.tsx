@@ -118,19 +118,23 @@ export const Day10ReminderModal: React.FC<Day10ReminderModalProps> = ({
     setTimeout(() => setCopiedId(null), 2500);
   };
 
+  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const handleSaveExtension = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!extensionModalItem) return;
+    setStatusMsg(null);
     try {
       await api.extendInvoice(extensionModalItem.invoiceId, {
         extendedDate: extendDate,
         reason: extendReason,
       });
       setExtensionModalItem(null);
+      setStatusMsg({ type: 'success', text: `Đã gia hạn thành công cho phòng ${extensionModalItem.roomCode} đến ngày ${extendDate}!` });
       await loadPending();
       onRefresh();
     } catch (err: any) {
-      alert(err.message || 'Lỗi khi lưu ngày gia hạn.');
+      setStatusMsg({ type: 'error', text: err.message || 'Lỗi khi lưu ngày gia hạn.' });
     }
   };
 
@@ -159,6 +163,24 @@ export const Day10ReminderModal: React.FC<Day10ReminderModalProps> = ({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* In-Modal Alert Notification */}
+        {statusMsg && (
+          <div className={`px-4 py-2.5 text-xs font-semibold flex items-center justify-between border-b ${
+            statusMsg.type === 'success'
+              ? 'bg-emerald-950/80 border-emerald-800 text-emerald-300'
+              : 'bg-rose-950/80 border-rose-800 text-rose-300'
+          }`}>
+            <span>{statusMsg.text}</span>
+            <button
+              type="button"
+              onClick={() => setStatusMsg(null)}
+              className="text-slate-400 hover:text-white text-xs px-1 cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Content */}
         <div className="p-4 sm:p-5 overflow-y-auto space-y-3 flex-1">

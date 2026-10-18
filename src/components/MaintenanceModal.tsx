@@ -41,10 +41,14 @@ export const MaintenanceModal: React.FC<MaintenanceModalProps> = ({
 
   const isLandlord = currentUser.role === 'landlord';
 
+  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
+
     setCreating(true);
+    setStatusMsg(null);
     try {
       await api.createMaintenance({
         roomId: selectedRoomId,
@@ -54,9 +58,10 @@ export const MaintenanceModal: React.FC<MaintenanceModalProps> = ({
       setShowCreate(false);
       setTitle('');
       setDescription('');
+      setStatusMsg({ type: 'success', text: 'Đã gửi yêu cầu bảo trì thành công!' });
       onRefresh();
     } catch (err: any) {
-      alert(err.message || 'Lỗi khi gửi yêu cầu bảo trì.');
+      setStatusMsg({ type: 'error', text: err.message || 'Lỗi khi gửi yêu cầu bảo trì.' });
     } finally {
       setCreating(false);
     }
@@ -64,6 +69,7 @@ export const MaintenanceModal: React.FC<MaintenanceModalProps> = ({
 
   const handleResolve = async (ticketId: string, status: 'resolved' | 'in_progress' | 'rejected') => {
     setSavingResolution(true);
+    setStatusMsg(null);
     try {
       await api.updateMaintenance(ticketId, {
         status,
@@ -74,9 +80,10 @@ export const MaintenanceModal: React.FC<MaintenanceModalProps> = ({
       setResolvingId(null);
       setCost('');
       setResolutionNote('');
+      setStatusMsg({ type: 'success', text: 'Đã cập nhật trạng thái sự cố thành công!' });
       onRefresh();
     } catch (err: any) {
-      alert(err.message || 'Lỗi khi cập nhật trạng thái.');
+      setStatusMsg({ type: 'error', text: err.message || 'Lỗi khi cập nhật trạng thái.' });
     } finally {
       setSavingResolution(false);
     }
@@ -103,6 +110,24 @@ export const MaintenanceModal: React.FC<MaintenanceModalProps> = ({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* In-Modal Alert Notification */}
+        {statusMsg && (
+          <div className={`px-4 py-2.5 text-xs font-semibold flex items-center justify-between border-b ${
+            statusMsg.type === 'success'
+              ? 'bg-emerald-950/80 border-emerald-800 text-emerald-300'
+              : 'bg-rose-950/80 border-rose-800 text-rose-300'
+          }`}>
+            <span>{statusMsg.text}</span>
+            <button
+              type="button"
+              onClick={() => setStatusMsg(null)}
+              className="text-slate-400 hover:text-white text-xs px-1"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Content Bar */}
         <div className="bg-slate-850 px-4 py-3 border-b border-slate-800 flex justify-between items-center">

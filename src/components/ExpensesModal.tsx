@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { HouseExpense } from '../types/index.ts';
 import { api } from '../services/api.ts';
 import { formatVND, formatDateVN } from '../utils/formatters.ts';
-import { Plus, X, DollarSign, Receipt, Tag } from 'lucide-react';
+import { Plus, X, DollarSign, Receipt, Tag, AlertCircle } from 'lucide-react';
 
 interface ExpensesModalProps {
   expenses: HouseExpense[];
@@ -18,10 +18,13 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({ expenses, onClose,
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     const num = parseInt(amountStr.replace(/\D/g, ''), 10) || 0;
     if (num <= 0 || !title.trim()) return;
 
@@ -39,7 +42,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({ expenses, onClose,
       setNotes('');
       onRefresh();
     } catch (err: any) {
-      alert(err.message || 'Lỗi khi lưu chi phí.');
+      setErrorMessage(err.message || 'Lỗi khi lưu chi phí.');
     } finally {
       setLoading(false);
     }
@@ -95,6 +98,12 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({ expenses, onClose,
         {/* Create Form */}
         {showCreate && (
           <form onSubmit={handleCreate} className="p-4 bg-slate-850 border-b border-slate-800 space-y-3 text-xs">
+            {errorMessage && (
+              <div className="p-2.5 rounded-lg bg-rose-950/70 border border-rose-800 text-rose-300 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
             <h4 className="font-bold text-rose-400">Ghi nhận khoản chi mới</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>

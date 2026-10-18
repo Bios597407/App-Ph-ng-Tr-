@@ -52,9 +52,11 @@ export interface BillingOverrides {
   rent?: number;
   electricStart?: number;
   electricEnd?: number;
+  electricUsage?: number;
   electricRate?: number;
   waterStart?: number;
   waterEnd?: number;
+  waterUsage?: number;
   waterRate?: number;
   garbageFee?: number;
   internetFee?: number;
@@ -100,23 +102,35 @@ export function calculateRoomBillingBreakdown(params: {
         5000;
   const electricRate = rawERate <= 100 ? rawERate * 1000 : rawERate;
 
+  const electricItem = invoice?.items.find((i) => i.type === 'electricity');
+  const electricUsage =
+    overrides.electricUsage !== undefined
+      ? overrides.electricUsage
+      : meterReading?.electricUsage !== undefined
+      ? meterReading.electricUsage
+      : electricItem?.quantity !== undefined
+      ? electricItem.quantity
+      : Math.max(0, (overrides.electricEnd ?? room.currentMeter?.electricNumber ?? 1280) -
+                    (overrides.electricStart ?? Math.max(0, (room.currentMeter?.electricNumber ?? 1280) - 80)));
+
   const electricStart =
     overrides.electricStart !== undefined
       ? overrides.electricStart
-      : meterReading?.electricStart ??
-        invoice?.items.find((i) => i.type === 'electricity')?.quantity ??
-        Math.max(0, (room.currentMeter?.electricNumber ?? 1280) - 80);
+      : meterReading?.electricStart !== undefined
+      ? meterReading.electricStart
+      : Math.max(0, (room.currentMeter?.electricNumber ?? 1280) - electricUsage);
 
   const electricEnd =
     overrides.electricEnd !== undefined
       ? overrides.electricEnd
-      : meterReading?.electricEnd ??
-        (room.currentMeter?.electricNumber ?? electricStart + 80);
+      : meterReading?.electricEnd !== undefined
+      ? meterReading.electricEnd
+      : (room.currentMeter?.electricNumber ?? electricStart + electricUsage);
 
-  const electricUsage = Math.max(0, electricEnd - electricStart);
   const electricTotal =
-    invoice?.items.find((i) => i.type === 'electricity')?.amount ??
-    electricUsage * electricRate;
+    electricItem?.amount !== undefined
+      ? electricItem.amount
+      : electricUsage * electricRate;
 
   // 3. Water
   const rawWRate =
@@ -128,22 +142,35 @@ export function calculateRoomBillingBreakdown(params: {
         4000;
   const waterRate = rawWRate <= 100 ? rawWRate * 1000 : rawWRate;
 
+  const waterItem = invoice?.items.find((i) => i.type === 'water');
+  const waterUsage =
+    overrides.waterUsage !== undefined
+      ? overrides.waterUsage
+      : meterReading?.waterUsage !== undefined
+      ? meterReading.waterUsage
+      : waterItem?.quantity !== undefined
+      ? waterItem.quantity
+      : Math.max(0, (overrides.waterEnd ?? room.currentMeter?.waterNumber ?? 350) -
+                    (overrides.waterStart ?? Math.max(0, (room.currentMeter?.waterNumber ?? 350) - 10)));
+
   const waterStart =
     overrides.waterStart !== undefined
       ? overrides.waterStart
-      : meterReading?.waterStart ??
-        Math.max(0, (room.currentMeter?.waterNumber ?? 350) - 10);
+      : meterReading?.waterStart !== undefined
+      ? meterReading.waterStart
+      : Math.max(0, (room.currentMeter?.waterNumber ?? 350) - waterUsage);
 
   const waterEnd =
     overrides.waterEnd !== undefined
       ? overrides.waterEnd
-      : meterReading?.waterEnd ??
-        (room.currentMeter?.waterNumber ?? waterStart + 10);
+      : meterReading?.waterEnd !== undefined
+      ? meterReading.waterEnd
+      : (room.currentMeter?.waterNumber ?? waterStart + waterUsage);
 
-  const waterUsage = Math.max(0, waterEnd - waterStart);
   const waterTotal =
-    invoice?.items.find((i) => i.type === 'water')?.amount ??
-    waterUsage * waterRate;
+    waterItem?.amount !== undefined
+      ? waterItem.amount
+      : waterUsage * waterRate;
 
   // 4. Service fees
   const garbageFee =

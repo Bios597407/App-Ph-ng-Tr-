@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Room, Invoice, Payment } from '../types/index.ts';
+import { Room, Invoice, Payment, MeterReading } from '../types/index.ts';
 import { api } from '../services/api.ts';
 import { formatVND } from '../utils/formatters.ts';
 import { calculateRoomBillingBreakdown } from '../utils/billingCalculator.ts';
@@ -19,6 +19,7 @@ interface QuickCollectModalProps {
   rooms: Room[];
   invoices: Invoice[];
   payments?: Payment[];
+  meters?: MeterReading[];
   onClose: () => void;
   onSuccess: (payment: Payment) => void;
 }
@@ -28,6 +29,7 @@ export const QuickCollectModal: React.FC<QuickCollectModalProps> = ({
   rooms,
   invoices,
   payments = [],
+  meters = [],
   onClose,
   onSuccess,
 }) => {
@@ -174,18 +176,22 @@ export const QuickCollectModal: React.FC<QuickCollectModalProps> = ({
             {/* Current Debt & Billing Breakdown Summary */}
             {(() => {
               const activeInv = roomInvoices[0];
+              const meterReading = currentRoom && activeInv
+                ? meters.find((m) => m.roomId === currentRoom.id && m.period === activeInv.periodMonth)
+                : undefined;
               const breakdown = currentRoom && activeInv
                 ? calculateRoomBillingBreakdown({
                     room: currentRoom,
                     currentPeriod: activeInv.periodMonth,
                     invoice: activeInv,
+                    meterReading,
                     payments,
                     allInvoices: invoices,
                   })
                 : null;
 
               return (
-                <div className="bg-slate-850 rounded-xl p-3.5 border border-slate-800 space-y-2.5 text-xs">
+                <div className="bg-slate-850 rounded-xl p-3 sm:p-3.5 border border-slate-800 space-y-2 text-xs">
                   <div className="flex justify-between items-center pb-2 border-b border-slate-800">
                     <div>
                       <span className="text-slate-400 block text-[11px]">Người thuê / Đại diện:</span>
@@ -199,7 +205,7 @@ export const QuickCollectModal: React.FC<QuickCollectModalProps> = ({
                     </div>
                   </div>
 
-                  {/* ITEMIZED BREAKDOWN LIST - STANDARDIZED 8 ITEMS */}
+                  {/* ITEMIZED BREAKDOWN LIST - STANDARDIZED ALL 8 ITEMS */}
                   {breakdown && (
                     <div className="space-y-1.5 pt-0.5 text-slate-300">
                       <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
@@ -241,27 +247,35 @@ export const QuickCollectModal: React.FC<QuickCollectModalProps> = ({
                       </div>
 
                       {/* 6. Previous Debt */}
-                      {breakdown.previousDebt > 0 && (
-                        <div className="flex justify-between items-center bg-rose-950/40 px-2.5 py-1.5 rounded-lg border border-rose-900/50 text-rose-300">
-                          <span>➕ 6. Nợ cũ kỳ trước mang sang:</span>
-                          <span className="font-extrabold">+{formatVND(breakdown.previousDebt)}</span>
-                        </div>
-                      )}
+                      <div className={`flex justify-between items-center px-2.5 py-1.5 rounded-lg border ${
+                        breakdown.previousDebt > 0
+                          ? 'bg-rose-950/40 border-rose-900/50 text-rose-300 font-extrabold'
+                          : 'bg-slate-800/40 border-slate-750/50 text-slate-400'
+                      }`}>
+                        <span>➕ 6. Nợ cũ kỳ trước mang sang:</span>
+                        <span className="font-mono font-bold">
+                          {breakdown.previousDebt > 0 ? `+${formatVND(breakdown.previousDebt)}` : '0 đ'}
+                        </span>
+                      </div>
 
                       {/* 7. Previous Paid Amount */}
-                      {breakdown.paidAmount > 0 && (
-                        <div className="flex justify-between items-center bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-900/50 text-emerald-300 font-extrabold">
-                          <span>🔻 7. Đã thanh toán đợt trước / Trả trước:</span>
-                          <span>-{formatVND(breakdown.paidAmount)}</span>
-                        </div>
-                      )}
+                      <div className={`flex justify-between items-center px-2.5 py-1.5 rounded-lg border ${
+                        breakdown.paidAmount > 0
+                          ? 'bg-emerald-950/40 border-emerald-900/50 text-emerald-300 font-extrabold'
+                          : 'bg-slate-800/40 border-slate-750/50 text-slate-400'
+                      }`}>
+                        <span>🔻 7. Đã thanh toán đợt trước / Trả trước:</span>
+                        <span className="font-mono font-bold">
+                          {breakdown.paidAmount > 0 ? `-${formatVND(breakdown.paidAmount)}` : '0 đ'}
+                        </span>
+                      </div>
                     </div>
                   )}
 
                   {/* 8. TOTAL REMAINING */}
                   <div className="flex justify-between items-center text-sm pt-2 border-t border-slate-800 font-black">
                     <span className="text-amber-300">8. Tổng còn phải thu:</span>
-                    <span className="text-amber-400 text-lg tabular-nums font-mono">
+                    <span className="text-amber-400 text-base sm:text-lg tabular-nums font-mono">
                       {formatVND(breakdown ? breakdown.remainingBalance : totalRemainingDebt)}
                     </span>
                   </div>
