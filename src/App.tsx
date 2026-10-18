@@ -70,6 +70,8 @@ import {
   TrendingUp,
   SlidersHorizontal,
   Home,
+  UserCheck,
+  Eye,
 } from 'lucide-react';
 
 export default function App() {
@@ -264,6 +266,20 @@ export default function App() {
     }
   };
 
+  const handleSwitchTenantPortalForRoom = async (roomId: string) => {
+    try {
+      const res = await api.login('khachthue');
+      setCurrentUser({
+        ...res.user,
+        roomId: roomId,
+      });
+      const room = rooms.find((r) => r.id === roomId);
+      showToast(`Đã mở Cổng Khách Thuê cho phòng ${room ? room.code : ''}`, 'info');
+    } catch {
+      showToast('Lỗi khi mở Cổng Khách Thuê', 'error');
+    }
+  };
+
   // KPI Summary Calculations directly derived from 9 rooms of current period
   const roomCalculations = useMemo(() => {
     let totalExpectedRevenue = 0;
@@ -287,39 +303,53 @@ export default function App() {
         };
       }
 
-      // Meter reading for currentPeriod
-      const reading = meters.find((m) => m.roomId === room.id && m.period === currentPeriod);
-      const eStart = reading?.electricStart ?? Math.max(0, (room.currentMeter?.electricNumber ?? 1200) - 80);
-      const eEnd = reading?.electricEnd ?? (room.currentMeter?.electricNumber ?? 1280);
-      const eRate = reading?.electricRate ?? (profile?.electricityDefaultRate ?? 5000);
-      const eUsage = Math.max(0, eEnd - eStart);
-      const eTotal = eUsage * eRate;
-
-      const wStart = reading?.waterStart ?? Math.max(0, (room.currentMeter?.waterNumber ?? 340) - 10);
-      const wEnd = reading?.waterEnd ?? (room.currentMeter?.waterNumber ?? 350);
-      const wRate = reading?.waterRate ?? (profile?.waterDefaultRate ?? 4000);
-      const wUsage = Math.max(0, wEnd - wStart);
-      const wTotal = wUsage * wRate;
-
-      const otherFees = (profile?.garbageDefaultFee ?? 0) + (profile?.internetDefaultFee ?? 0);
-
+      // Check existing invoice for current period
       const inv = invoices.find(
         (i) => i.roomId === room.id && i.periodMonth === currentPeriod && i.status !== 'cancelled'
       );
 
-      const calculatedTotal = room.currentRent + eTotal + wTotal + otherFees;
-      const totalBill = inv ? inv.currentCycleTotal : calculatedTotal;
-      const remainingBalance = inv ? inv.remainingBalance : calculatedTotal;
-      const paidAmount = inv ? inv.currentCycleTotal - inv.remainingBalance : 0;
-      const isPaid = inv ? inv.remainingBalance <= 0 : false;
+      // Check existing meter reading for current period
+      const reading = meters.find((m) => m.roomId === room.id && m.period === currentPeriod);
+
+      let totalBill = 0;
+      let paidAmount = 0;
+      let remainingBalance = 0;
+      let isPaid = false;
+
+      if (inv) {
+        // 1. Primary Source of Truth: Saved DB Invoice
+        totalBill = inv.currentCycleTotal + (inv.previousDebt || 0);
+        remainingBalance = inv.remainingBalance;
+        paidAmount = inv.paidAmount ?? Math.max(0, totalBill - remainingBalance);
+        isPaid = inv.remainingBalance <= 0;
+      } else if (reading) {
+        // 2. Secondary Source: Actual Meter Reading recorded in DB
+        const eUsage = Math.max(0, reading.electricEnd - reading.electricStart);
+        const eRate = reading.electricRate || (profile?.electricityDefaultRate ?? 5000);
+        const wUsage = Math.max(0, reading.waterEnd - reading.waterStart);
+        const wRate = reading.waterRate || (profile?.waterDefaultRate ?? 4000);
+        const otherFees = (profile?.garbageDefaultFee ?? 0) + (profile?.internetDefaultFee ?? 0);
+
+        totalBill = room.currentRent + (eUsage * eRate) + (wUsage * wRate) + otherFees;
+        remainingBalance = totalBill;
+        paidAmount = 0;
+        isPaid = false;
+      } else {
+        // 3. Clean Fallback: Base Rent Only (No fake/estimated electricity or water numbers)
+        totalBill = room.currentRent;
+        remainingBalance = totalBill;
+        paidAmount = 0;
+        isPaid = false;
+      }
 
       totalExpectedRevenue += totalBill;
+      totalPaidAmount += Math.max(0, paidAmount);
+      totalUnpaidAmount += Math.max(0, remainingBalance);
+
       if (isPaid) {
         paidRoomsCount++;
-        totalPaidAmount += paidAmount > 0 ? paidAmount : totalBill;
       } else {
         unpaidRoomsCount++;
-        totalUnpaidAmount += remainingBalance;
       }
 
       return {
@@ -463,7 +493,7 @@ export default function App() {
                 className={`px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
                   textHeight === 'sm' ? 'bg-emerald-600 text-white font-black' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Chiều cao chữ: Nhỏ (14px - dòng 1.35)"
+                title="Chiều cao chữ: Nhỏ (16px - dòng 1.35)"
               >
                 Nhỏ
               </button>
@@ -473,7 +503,7 @@ export default function App() {
                 className={`px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
                   textHeight === 'md' ? 'bg-emerald-600 text-white font-black' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Chiều cao chữ: Tiêu chuẩn (16px - dòng 1.5)"
+                title="Chiều cao chữ: Tiêu chuẩn (18px - dòng 1.5)"
               >
                 Vừa
               </button>
@@ -483,7 +513,7 @@ export default function App() {
                 className={`px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
                   textHeight === 'lg' ? 'bg-emerald-600 text-white font-black' : 'text-slate-400 hover:text-white'
                 }`}
-                title="Chiều cao chữ: Lớn (18px - dòng 1.65)"
+                title="Chiều cao chữ: Lớn (20px - dòng 1.65)"
               >
                 Lớn
               </button>
@@ -617,7 +647,7 @@ export default function App() {
                     ? 'bg-white text-indigo-700 shadow-xs font-black ring-1 ring-slate-200'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
-                title="Cỡ chữ Nhỏ (14px - dòng 1.35)"
+                title="Cỡ chữ Nhỏ (16px - dòng 1.35)"
               >
                 Nhỏ
               </button>
@@ -629,7 +659,7 @@ export default function App() {
                     ? 'bg-white text-indigo-700 shadow-xs font-black ring-1 ring-slate-200'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
-                title="Cỡ chữ Tiêu chuẩn (16px - dòng 1.5)"
+                title="Cỡ chữ Tiêu chuẩn (18px - dòng 1.5)"
               >
                 Vừa
               </button>
@@ -641,7 +671,7 @@ export default function App() {
                     ? 'bg-white text-indigo-700 shadow-xs font-black ring-1 ring-slate-200'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                 }`}
-                title="Cỡ chữ Lớn (18px - dòng 1.65)"
+                title="Cỡ chữ Lớn (20px - dòng 1.65)"
               >
                 Lớn
               </button>
@@ -691,6 +721,17 @@ export default function App() {
             >
               <Settings className="w-4 h-4 text-indigo-600 shrink-0" />
               <span className="whitespace-nowrap">Cài đặt (Ngân hàng & Đơn giá)</span>
+            </button>
+
+            {/* Quick Switch to Tenant Portal View */}
+            <button
+              type="button"
+              onClick={() => handleSwitchTenantPortalForRoom(rooms[0]?.id || 'room-P01')}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs sm:text-sm font-black transition-colors shadow-2xs whitespace-nowrap min-h-[40px] cursor-pointer"
+              title="Mở Cổng Khách Thuê (Tenant Portal) để trải nghiệm giao diện xem & đối chiếu lịch sử hóa đơn các tháng"
+            >
+              <UserCheck className="w-4 h-4 text-teal-200 shrink-0" />
+              <span className="whitespace-nowrap">👁️ Xem Giao Diện Khách Thuê</span>
             </button>
           </div>
         </div>
@@ -986,9 +1027,10 @@ export default function App() {
                   currentStayId={stay?.id}
                   currentPeriod={currentPeriod}
                   onCollect={(rId) => setCollectRoomId(rId)}
-                  onViewDetails={(r) => setAdjustmentRoom(r)}
+                  onViewDetails={(r) => setDetailRoom(r)}
                   onOpenAdjustment={(r) => setAdjustmentRoom(r)}
                   onOpenZalo={(rId) => setZaloCalcRoomId(rId)}
+                  onViewTenantPortal={(rId) => handleSwitchTenantPortalForRoom(rId)}
                   onRefresh={loadAllData}
                 />
               );
@@ -1004,7 +1046,7 @@ export default function App() {
             tenancies={tenancies}
             currentPeriod={currentPeriod}
             onCollect={(rId) => setCollectRoomId(rId)}
-            onViewDetails={(r) => setAdjustmentRoom(r)}
+            onViewDetails={(r) => setDetailRoom(r)}
             onOpenAdjustment={(r) => setAdjustmentRoom(r)}
             onOpenZalo={(rId) => setZaloCalcRoomId(rId)}
             onWalkthrough={() => setShowWalkthrough(true)}
@@ -1020,7 +1062,7 @@ export default function App() {
             tenancies={tenancies}
             currentPeriod={currentPeriod}
             onCollect={(rId) => setCollectRoomId(rId)}
-            onViewDetails={(r) => setAdjustmentRoom(r)}
+            onViewDetails={(r) => setDetailRoom(r)}
             onOpenZalo={(rId) => setZaloCalcRoomId(rId)}
           />
         )}
@@ -1201,6 +1243,11 @@ export default function App() {
           onCollect={(rId) => {
             setAdjustmentRoom(null);
             setCollectRoomId(rId);
+          }}
+          onViewHistory={() => {
+            const target = adjustmentRoom;
+            setAdjustmentRoom(null);
+            setDetailRoom(target);
           }}
         />
       )}

@@ -12,6 +12,8 @@ import {
   AlertCircle,
   RotateCcw,
   Copy,
+  Eye,
+  History,
   Calculator,
   SlidersHorizontal,
 } from 'lucide-react';
@@ -28,6 +30,7 @@ interface RoomCardProps {
   onViewDetails: (room: Room) => void;
   onOpenAdjustment?: (room: Room) => void;
   onOpenZalo?: (roomId: string) => void;
+  onViewTenantPortal?: (roomId: string) => void;
   onRefresh?: () => void;
 }
 
@@ -41,6 +44,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   onViewDetails,
   onOpenAdjustment,
   onOpenZalo,
+  onViewTenantPortal,
 }) => {
   const isRented = room.status === 'rented';
   const remaining = currentInvoice ? currentInvoice.remainingBalance : 0;
@@ -80,8 +84,12 @@ export const RoomCard: React.FC<RoomCardProps> = ({
     : 0;
 
   // Exact Transparent Sum
-  const calculatedTotal = room.currentRent + eTotalCost + wTotalCost + otherFeesNum;
-  const totalBill = calculatedTotal;
+  let totalBill = room.currentRent;
+  if (currentInvoice) {
+    totalBill = currentInvoice.currentCycleTotal + (currentInvoice.previousDebt || 0);
+  } else if (meterReading) {
+    totalBill = room.currentRent + eTotalCost + wTotalCost;
+  }
 
   const [copiedPhoneToast, setCopiedPhoneToast] = useState<boolean>(false);
 
@@ -370,6 +378,21 @@ export const RoomCard: React.FC<RoomCardProps> = ({
             )}
           </button>
         </div>
+
+        {/* Quick Link: Tenant Portal View */}
+        {isRented && onViewTenantPortal && (
+          <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => onViewTenantPortal(room.id)}
+              className="w-full py-1.5 px-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-900 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              title="Mở giao diện Cổng Khách Thuê của phòng này để xem và đối chiếu lịch sử hóa đơn"
+            >
+              <Eye className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+              <span>👁️ Xem giao diện Cổng Khách Thuê</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

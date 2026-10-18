@@ -20,6 +20,7 @@ import {
   PlusCircle,
   ShieldAlert,
   User,
+  History,
 } from 'lucide-react';
 
 interface BillingAdjustmentModalProps {
@@ -33,6 +34,7 @@ interface BillingAdjustmentModalProps {
   onSuccess: () => void;
   onOpenZalo?: (roomId: string) => void;
   onCollect?: (roomId: string) => void;
+  onViewHistory?: () => void;
 }
 
 export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
@@ -46,6 +48,7 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
   onSuccess,
   onOpenZalo,
   onCollect,
+  onViewHistory,
 }) => {
   // 0. Tenant information state (editable right in dialog)
   const [tenantNameInput, setTenantNameInput] = useState<string>(tenantName || '');
@@ -222,13 +225,30 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-            title="Đóng hộp thoại"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onViewHistory && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onViewHistory();
+                }}
+                className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+                title="Mở hộp thoại Chi Tiết & Lịch Sử Hóa Đơn 3 Tab của phòng này"
+              >
+                <History className="w-4 h-4 text-indigo-200 shrink-0" />
+                <span>📜 Xem Tab Lịch Sử Các Tháng</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              title="Đóng hộp thoại"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* MODAL BODY */}

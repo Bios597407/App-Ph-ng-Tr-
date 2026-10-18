@@ -234,13 +234,13 @@ export const RoomDetailModal: React.FC<RoomDetailModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`px-3.5 py-2 rounded-xl transition-all ${
+            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
               activeTab === 'history'
-                ? 'bg-white text-indigo-700 shadow-2xs font-black'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-indigo-600 text-white shadow-xs font-black'
+                : 'bg-indigo-50 text-indigo-900 border border-indigo-200 font-extrabold hover:bg-indigo-100'
             }`}
           >
-            3. Lịch sử đóng tiền ({roomHistoryInvoices.length})
+            3. 📜 Lịch sử hóa đơn các tháng ({roomHistoryInvoices.length})
           </button>
         </div>
 
@@ -466,9 +466,12 @@ export const RoomDetailModal: React.FC<RoomDetailModalProps> = ({
           {/* TAB 3: PAYMENT HISTORY */}
           {activeTab === 'history' && (
             <div className="space-y-3">
-              <h3 className="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
-                <History className="w-4 h-4 text-indigo-600" />
-                <span>Lịch sử thanh toán hóa đơn ({roomHistoryInvoices.length} kỳ)</span>
+              <h3 className="font-extrabold text-slate-800 text-xs flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <History className="w-4 h-4 text-indigo-600" />
+                  <span>Lịch sử các kỳ hóa đơn ({roomHistoryInvoices.length} tháng)</span>
+                </span>
+                <span className="text-[11px] text-slate-500 font-normal">Nhấp "Xem chi tiết" để đối chiếu danh mục khoản thu</span>
               </h3>
 
               {roomHistoryInvoices.length === 0 ? (
@@ -476,35 +479,83 @@ export const RoomDetailModal: React.FC<RoomDetailModalProps> = ({
                   Chưa có lịch sử thanh toán nào cho phòng này.
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-100 text-slate-600 font-extrabold uppercase border-b border-slate-200">
-                      <tr>
-                        <th className="p-2.5">Kỳ thu</th>
-                        <th className="p-2.5">Tổng tiền</th>
-                        <th className="p-2.5">Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
-                      {roomHistoryInvoices.map((inv) => (
-                        <tr key={inv.id} className="hover:bg-slate-50">
-                          <td className="p-2.5 font-bold font-mono">Tháng {inv.periodMonth.slice(5)}/{inv.periodMonth.slice(0, 4)}</td>
-                          <td className="p-2.5 font-bold font-mono text-emerald-700">{formatVND(inv.currentCycleTotal)}</td>
-                          <td className="p-2.5">
-                            {inv.remainingBalance <= 0 ? (
-                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
-                                Đã hoàn tất
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-bold text-[11px]">
-                                Còn nợ {formatVND(inv.remainingBalance)}
-                              </span>
-                            )}
-                          </td>
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs space-y-2">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-100 text-slate-600 font-extrabold uppercase border-b border-slate-200">
+                        <tr>
+                          <th className="p-2.5">Kỳ thu</th>
+                          <th className="p-2.5">🏠 Tiền phòng</th>
+                          <th className="p-2.5">⚡/💧 Điện Nước</th>
+                          <th className="p-2.5">Tổng tiền</th>
+                          <th className="p-2.5">Trạng thái</th>
+                          <th className="p-2.5 text-right">Chi tiết</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                        {roomHistoryInvoices.map((inv) => {
+                          const elecItem = inv.items.find((i) => i.type === 'electricity' || i.name.includes('Điện'));
+                          const waterItem = inv.items.find((i) => i.type === 'water' || i.name.includes('Nước'));
+                          const rentItem = inv.items.find((i) => i.type === 'rent' || i.name.includes('Tiền thuê'));
+                          const utilsTotal = (elecItem?.amount || 0) + (waterItem?.amount || 0);
+
+                          return (
+                            <React.Fragment key={inv.id}>
+                              <tr className="hover:bg-slate-50 transition-colors">
+                                <td className="p-2.5 font-bold font-mono text-indigo-900">
+                                  Tháng {inv.periodMonth.slice(5)}/{inv.periodMonth.slice(0, 4)}
+                                </td>
+                                <td className="p-2.5 font-semibold">
+                                  {formatVND(rentItem?.amount || room.currentRent)}
+                                </td>
+                                <td className="p-2.5 font-semibold text-slate-700">
+                                  {formatVND(utilsTotal)}
+                                </td>
+                                <td className="p-2.5 font-bold font-mono text-emerald-700">
+                                  {formatVND(inv.currentCycleTotal)}
+                                </td>
+                                <td className="p-2.5">
+                                  {inv.remainingBalance <= 0 ? (
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
+                                      Đã hoàn tất
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-bold text-[11px]">
+                                      Còn nợ {formatVND(inv.remainingBalance)}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="p-2.5 text-right">
+                                  <details className="inline-block text-left">
+                                    <summary className="py-1 px-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] rounded cursor-pointer select-none">
+                                      Khoản thu
+                                    </summary>
+                                    <div className="absolute right-6 mt-1 w-64 bg-slate-900 text-white text-xs p-3 rounded-xl border border-slate-700 shadow-xl z-20 space-y-1.5">
+                                      <div className="font-bold border-b border-slate-700 pb-1 text-emerald-400">
+                                        Bảng kê kỳ {inv.periodMonth} ({inv.invoiceCode})
+                                      </div>
+                                      {inv.items.map((it, idx) => (
+                                        <div key={idx} className="flex justify-between text-[11px]">
+                                          <span className="text-slate-300">{it.name}:</span>
+                                          <span className="font-bold">{formatVND(it.amount)}</span>
+                                        </div>
+                                      ))}
+                                      {inv.previousDebt > 0 && (
+                                        <div className="flex justify-between text-[11px] text-amber-300 pt-1 border-t border-slate-800">
+                                          <span>Nợ cũ mang sang:</span>
+                                          <span className="font-bold">+{formatVND(inv.previousDebt)}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </details>
+                                </td>
+                              </tr>
+                            </React.Fragment>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
