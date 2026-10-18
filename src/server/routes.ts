@@ -7,7 +7,7 @@ import {
   listBackups,
   restoreBackupFile,
 } from './db.ts';
-import {
+import type {
   Invoice,
   InvoiceItem,
   Payment,
