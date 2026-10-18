@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Room, HouseProfile, Invoice, MeterReading } from '../types/index.ts';
+import { Room, HouseProfile, Invoice, MeterReading, Payment } from '../types/index.ts';
 import { api } from '../services/api.ts';
 import { formatVND } from '../utils/formatters.ts';
+import { calculateRoomBillingBreakdown } from '../utils/billingCalculator.ts';
 import { motion } from 'motion/react';
 import {
   MessageSquare,
@@ -27,6 +28,7 @@ interface ZaloCalculatorModalProps {
   currentPeriod: string;
   meterReadings: MeterReading[];
   invoices: Invoice[];
+  payments?: Payment[];
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -38,6 +40,7 @@ export const ZaloCalculatorModal: React.FC<ZaloCalculatorModalProps> = ({
   currentPeriod,
   meterReadings,
   invoices,
+  payments = [],
   onClose,
   onSuccess,
 }) => {
@@ -98,26 +101,40 @@ export const ZaloCalculatorModal: React.FC<ZaloCalculatorModalProps> = ({
 
   const baseRentNum = parseInt(baseRentInput.replace(/\D/g, ''), 10) || 0;
 
-  const electricUsage = electricEnd >= electricStart ? electricEnd - electricStart : electricEnd;
-  const electricTotal = electricUsage * eRate;
+  // Centralized Billing Breakdown Calculation
+  const breakdown = selectedRoom
+    ? calculateRoomBillingBreakdown({
+        room: selectedRoom,
+        currentPeriod,
+        invoice: existingInvoice || undefined,
+        meterReading: existingReading || undefined,
+        profile,
+        payments,
+        allInvoices: invoices,
+        overrides: {
+          rent: baseRentNum,
+          electricStart,
+          electricEnd,
+          electricRate: eRate,
+          waterStart,
+          waterEnd,
+          waterRate: wRate,
+        },
+      })
+    : null;
 
-  const waterUsage = waterEnd >= waterStart ? waterEnd - waterStart : waterEnd;
-  const waterTotal = waterUsage * wRate;
-
-  // Service fees
-  const garbageFee = profile.garbageDefaultFee || 0;
-  const internetFee = profile.internetDefaultFee || 0;
-  const otherFee = existingInvoice?.items.find((i) => i.type === 'other')?.amount || 0;
-  const totalServiceFees = garbageFee + internetFee + otherFee;
-
-  // Previous debt and paid amounts from existing invoice
-  const previousDebt = existingInvoice?.previousDebt || 0;
-  const paidAmount = existingInvoice?.paidAmount || 0;
-
-  // Exact calculations
-  const currentCycleTotal = baseRentNum + electricTotal + waterTotal + totalServiceFees;
-  const totalBill = currentCycleTotal + previousDebt;
-  const remainingBalance = Math.max(0, totalBill - paidAmount);
+  const currentCycleTotal = breakdown?.currentCycleTotal || 0;
+  const previousDebt = breakdown?.previousDebt || 0;
+  const paidAmount = breakdown?.paidAmount || 0;
+  const remainingBalance = breakdown?.remainingBalance || 0;
+  const electricUsage = breakdown?.electricUsage || 0;
+  const electricTotal = breakdown?.electricTotal || 0;
+  const waterUsage = breakdown?.waterUsage || 0;
+  const waterTotal = breakdown?.waterTotal || 0;
+  const garbageFee = breakdown?.garbageFee || 0;
+  const internetFee = breakdown?.internetFee || 0;
+  const otherFee = breakdown?.otherFee || 0;
+  const totalServiceFees = breakdown?.totalServiceFees || 0;
 
   // Editable Bank Transfer Info
   const [bankName, setBankName] = useState<string>(profile.bankAccount?.bankName || 'MB Bank');
@@ -477,17 +494,19 @@ Hạn đóng tiền: Ngày 10/${monthNumStr}. Trân trọng cảm ơn!`;
             <div className="bg-indigo-50/70 p-3.5 rounded-xl border border-indigo-200 text-xs space-y-3">
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 {/* VietQR Code Image */}
-                <div className="bg-white p-2 rounded-xl border border-indigo-200 shadow-2xs shrink-0 text-center">
-                  <img
-                    src={`https://img.vietqr.io/image/${profile.bankAccount?.bankId || 'MB'}-${accountNumber.trim()}-compact.png?amount=${remainingBalance}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountHolder.trim())}`}
-                    alt="VietQR Chuyển Khoản Tự Động"
-                    className="w-28 h-28 object-contain mx-auto rounded"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                  <span className="text-[10px] text-indigo-900 font-bold block mt-1">Mã VietQR Tự Động</span>
-                </div>
+                {accountNumber.trim() ? (
+                  <div className="bg-white p-2 rounded-xl border border-indigo-200 shadow-2xs shrink-0 text-center">
+                    <img
+                      src={`https://img.vietqr.io/image/${profile.bankAccount?.bankId || 'MB'}-${accountNumber.trim()}-compact.png?amount=${remainingBalance}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountHolder.trim())}`}
+                      alt="VietQR Chuyển Khoản Tự Động"
+                      className="w-28 h-28 object-contain mx-auto rounded"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                    <span className="text-[10px] text-indigo-900 font-bold block mt-1">Mã VietQR Tự Động</span>
+                  </div>
+                ) : null}
 
                 {/* Editable Fields */}
                 <div className="flex-1 space-y-2 w-full">

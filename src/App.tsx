@@ -21,6 +21,7 @@ import {
   saveClientFallbackDb,
 } from './utils/clientDbFallback.ts';
 import { formatVND } from './utils/formatters.ts';
+import { calculateRoomBillingBreakdown } from './utils/billingCalculator.ts';
 
 // UI Components
 import { RoomCard } from './components/RoomCard.tsx';
@@ -289,11 +290,6 @@ export default function App() {
     let unpaidRoomsCount = 0;
     let vacantRoomsCount = 0;
 
-    // Calculate previous period string (e.g. '2026-10' -> '2026-09')
-    const [currYear, currMonth] = currentPeriod.split('-').map(Number);
-    const prevDate = new Date(currYear, currMonth - 2, 1);
-    const previousPeriod = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
-
     const roomDetails = rooms.map((room) => {
       const isRented = room.status === 'rented';
       if (!isRented) {
@@ -308,54 +304,26 @@ export default function App() {
         };
       }
 
-      // 1. Calculate actual paidAmount directly from payments array for this room & period
-      const roomPeriodPayments = payments.filter((p) => {
-        if (p.roomId !== room.id || p.status === 'reversed') return false;
-        const matchesAlloc = p.allocations?.some((a) => a.period === currentPeriod);
-        const matchesDate = p.receivedAt?.slice(0, 7) === currentPeriod;
-        return matchesAlloc || matchesDate;
-      });
-      const paidAmount = roomPeriodPayments.reduce((sum, p) => sum + p.amount, 0);
-
-      // 2. Derive previousDebt directly from previous period's invoice if exists
-      const prevInv = invoices.find(
-        (i) => i.roomId === room.id && i.periodMonth === previousPeriod && i.status !== 'cancelled'
-      );
-      const previousDebt = prevInv ? Math.max(0, prevInv.remainingBalance) : 0;
-
-      // 3. Find current invoice or meter reading
       const inv = invoices.find(
         (i) => i.roomId === room.id && i.periodMonth === currentPeriod && i.status !== 'cancelled'
       );
       const reading = meters.find((m) => m.roomId === room.id && m.period === currentPeriod);
 
-      let currentCycleTotal = 0;
+      const bd = calculateRoomBillingBreakdown({
+        room,
+        currentPeriod,
+        invoice: inv,
+        meterReading: reading,
+        profile: profile || undefined,
+        payments,
+        allInvoices: invoices,
+      });
 
-      if (inv) {
-        currentCycleTotal = inv.currentCycleTotal;
-      } else if (reading) {
-        const eUsage = Math.max(0, reading.electricEnd - reading.electricStart);
-        const eRate = reading.electricRate || (profile?.electricityDefaultRate ?? 5000);
-        const wUsage = Math.max(0, reading.waterEnd - reading.waterStart);
-        const wRate = reading.waterRate || (profile?.waterDefaultRate ?? 4000);
-        const otherFees = (profile?.garbageDefaultFee ?? 0) + (profile?.internetDefaultFee ?? 0);
+      totalExpectedRevenue += bd.totalExpected;
+      totalPaidAmount += bd.paidAmount;
+      totalUnpaidAmount += bd.remainingBalance;
 
-        currentCycleTotal = room.currentRent + (eUsage * eRate) + (wUsage * wRate) + otherFees;
-      } else {
-        currentCycleTotal = room.currentRent;
-      }
-
-      // Exact mathematical formula: Total Bill = Current Cycle Total + Previous Debt
-      const effectivePrevDebt = inv?.previousDebt !== undefined ? inv.previousDebt : previousDebt;
-      const totalBill = currentCycleTotal + effectivePrevDebt;
-      const remainingBalance = Math.max(0, totalBill - paidAmount);
-      const isPaid = remainingBalance <= 0;
-
-      totalExpectedRevenue += totalBill;
-      totalPaidAmount += paidAmount;
-      totalUnpaidAmount += remainingBalance;
-
-      if (isPaid) {
+      if (bd.isPaid) {
         paidRoomsCount++;
       } else {
         unpaidRoomsCount++;
@@ -364,10 +332,10 @@ export default function App() {
       return {
         room,
         isRented: true,
-        isPaid,
-        totalBill,
-        paidAmount,
-        remainingBalance,
+        isPaid: bd.isPaid,
+        totalBill: bd.totalExpected,
+        paidAmount: bd.paidAmount,
+        remainingBalance: bd.remainingBalance,
       };
     });
 
@@ -1186,6 +1154,7 @@ export default function App() {
           initialRoomId={collectRoomId}
           rooms={rooms}
           invoices={invoices}
+          payments={payments}
           onClose={() => setCollectRoomId(null)}
           onSuccess={(payment) => {
             setCollectRoomId(null);
@@ -1351,6 +1320,7 @@ export default function App() {
           currentPeriod={currentPeriod}
           meterReadings={meters}
           invoices={invoices}
+          payments={payments}
           onClose={() => setZaloCalcRoomId(null)}
           onSuccess={() => {
             loadAllData();

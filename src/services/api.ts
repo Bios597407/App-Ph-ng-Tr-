@@ -1108,6 +1108,27 @@ export class ApiClient {
       };
     }
   }
+  // Reset all debts for a specific period
+  async resetAllDebts(periodMonth: string): Promise<{ success: boolean; count: number }> {
+    try {
+      return await this.request('/admin/reset-debts', {
+        method: 'POST',
+        body: JSON.stringify({ periodMonth }),
+      });
+    } catch {
+      const db = getClientFallbackDb();
+      let count = 0;
+      db.invoices.forEach((inv) => {
+        if (inv.periodMonth === periodMonth && inv.status !== 'cancelled') {
+          inv.previousDebt = 0;
+          inv.remainingBalance = inv.currentCycleTotal - (inv.paidAmount || 0) - (inv.appliedAdvance || 0);
+          count++;
+        }
+      });
+      saveClientFallbackDb(db);
+      return { success: true, count };
+    }
+  }
 }
 
 export const api = new ApiClient();

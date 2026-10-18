@@ -261,7 +261,7 @@ export interface AuditLogItem {
   actorName: string;
   role: string;
   action: string;
-  targetType: 'room' | 'invoice' | 'payment' | 'meter' | 'tenancy' | 'deposit' | 'settings' | 'expense' | 'backup';
+  targetType: 'room' | 'invoice' | 'payment' | 'meter' | 'tenancy' | 'deposit' | 'settings' | 'expense' | 'backup' | 'admin';
   targetId: string;
   description: string;
   beforeSnapshot?: any;

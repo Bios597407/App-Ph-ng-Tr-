@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Room, Invoice, MeterReading } from '../types/index.ts';
 import { formatVND } from '../utils/formatters.ts';
+import { calculateRoomBillingBreakdown } from '../utils/billingCalculator.ts';
 import {
   User,
   Zap,
@@ -40,56 +41,41 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   meterReading,
   tenantName = '',
   tenantPhone = '',
+  currentPeriod,
   onCollect,
   onViewDetails,
   onOpenAdjustment,
   onOpenZalo,
   onViewTenantPortal,
 }) => {
+  const breakdown = calculateRoomBillingBreakdown({
+    room,
+    currentPeriod,
+    invoice: currentInvoice || undefined,
+    meterReading: meterReading || undefined,
+  });
+
   const isRented = room.status === 'rented';
-  const remaining = currentInvoice ? currentInvoice.remainingBalance : 0;
-  const isPaid = isRented && currentInvoice && remaining <= 0;
+  const isPaid = isRented && breakdown.isPaid;
 
   // Meter Reading Numbers (Read-only on Card, Adjusted exclusively via Dialog)
-  const numEStart =
-    meterReading?.electricStart ?? Math.max(0, (room.currentMeter?.electricNumber ?? 1200) - 80);
-  const numEEnd = meterReading?.electricEnd ?? (room.currentMeter?.electricNumber ?? 1280);
+  const numEStart = breakdown.electricStart;
+  const numEEnd = breakdown.electricEnd;
+  const eRate = breakdown.electricRate;
+  const eUsage = breakdown.electricUsage;
+  const eTotalCost = breakdown.electricTotal;
 
-  const numWStart =
-    meterReading?.waterStart ?? Math.max(0, (room.currentMeter?.waterNumber ?? 340) - 10);
-  const numWEnd = meterReading?.waterEnd ?? (room.currentMeter?.waterNumber ?? 350);
+  const numWStart = breakdown.waterStart;
+  const numWEnd = breakdown.waterEnd;
+  const wRate = breakdown.waterRate;
+  const wUsage = breakdown.waterUsage;
+  const wTotalCost = breakdown.waterTotal;
 
-  // Unit Rates
-  const activeRate = room.priceHistory && room.priceHistory.length > 0 ? room.priceHistory[0] : null;
-  const rawERate = meterReading?.electricRate ?? (activeRate?.electricityRate ?? 5000);
-  const eRate = rawERate <= 100 ? rawERate * 1000 : rawERate;
-
-  const rawWRate = meterReading?.waterRate ?? (activeRate?.waterRate ?? 4000);
-  const wRate = rawWRate <= 100 ? rawWRate * 1000 : rawWRate;
-
-  // Usage and Costs
-  const isElectricInvalid = numEEnd < numEStart;
-  const eUsage = isElectricInvalid ? 0 : numEEnd - numEStart;
-  const eTotalCost = eUsage * eRate;
-
-  const isWaterInvalid = numWEnd < numWStart;
-  const wUsage = isWaterInvalid ? 0 : numWEnd - numWStart;
-  const wTotalCost = wUsage * wRate;
-
-  // Service Fees & Adjustments (Starts from 0)
-  const otherFeesNum = currentInvoice
-    ? currentInvoice.items
-        .filter((it) => ['garbage', 'internet', 'other', 'debt_adjustment'].includes(it.type))
-        .reduce((sum, it) => sum + it.amount, 0)
-    : 0;
+  // Service Fees & Adjustments
+  const otherFeesNum = breakdown.totalServiceFees;
 
   // Exact Transparent Sum
-  let totalBill = room.currentRent;
-  if (currentInvoice) {
-    totalBill = currentInvoice.currentCycleTotal + (currentInvoice.previousDebt || 0);
-  } else if (meterReading) {
-    totalBill = room.currentRent + eTotalCost + wTotalCost;
-  }
+  const totalBill = breakdown.totalExpected;
 
   const [copiedPhoneToast, setCopiedPhoneToast] = useState<boolean>(false);
 
@@ -307,44 +293,35 @@ export const RoomCard: React.FC<RoomCardProps> = ({
       {/* FOOTER & ACTIONS */}
       <div className="pt-3 mt-2 border-t border-slate-100 space-y-2.5">
         {/* TỔNG CÒN PHẢI THU - DÙNG CHUNG CẤU TRÚC ĐỒNG BỘ 100% VỚI HỘP THOẠI THU TIỀN & ZALO */}
-        {(() => {
-          const invPaid = currentInvoice?.paidAmount || 0;
-          const invPrevDebt = currentInvoice?.previousDebt || 0;
-          const cycleTotal = currentInvoice ? currentInvoice.currentCycleTotal : (room.currentRent + eTotalCost + wTotalCost + otherFeesNum);
-          const finalRemaining = currentInvoice ? currentInvoice.remainingBalance : Math.max(0, cycleTotal + invPrevDebt - invPaid);
-
-          return (
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenDialog();
-              }}
-              className="bg-indigo-50/70 hover:bg-indigo-100/90 border border-indigo-200 hover:border-indigo-300 rounded-xl p-2.5 sm:p-3 cursor-pointer transition-all hover:shadow-xs group/total"
-              title="Chạm vào đây để mở hộp thoại điều chỉnh Chỉ số Điện, Nước và Phí dịch vụ"
-            >
-              <div className="flex items-center justify-between text-xs text-indigo-950 font-black mb-1">
-                <span className="flex items-center gap-1.5">
-                  <Calculator className="w-4 h-4 text-indigo-600 shrink-0" />
-                  <span>Tổng còn phải thu:</span>
-                </span>
-                <span className="text-[11px] text-indigo-700 bg-white px-2 py-0.5 rounded-full border border-indigo-200 font-extrabold group-hover/total:bg-indigo-600 group-hover/total:text-white transition-colors flex items-center gap-1 shadow-2xs">
-                  <SlidersHorizontal className="w-3 h-3" />
-                  <span>Điều chỉnh</span>
-                </span>
-              </div>
-              <div className="flex items-baseline justify-between">
-                <div className="text-[11px] text-slate-600 font-medium truncate pr-2 space-x-1">
-                  <span>Phát sinh: <strong>{formatVND(cycleTotal)}</strong></span>
-                  {invPrevDebt > 0 && <span className="text-amber-700 font-bold">• Nợ: +{formatVND(invPrevDebt)}</span>}
-                  {invPaid > 0 && <span className="text-emerald-700 font-bold">• Đã nộp: -{formatVND(invPaid)}</span>}
-                </div>
-                <span className="text-lg sm:text-2xl font-black text-indigo-950 tracking-tight tabular-nums">
-                  {formatVND(finalRemaining)}
-                </span>
-              </div>
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            handleOpenDialog();
+          }}
+          className="bg-indigo-50/70 hover:bg-indigo-100/90 border border-indigo-200 hover:border-indigo-300 rounded-xl p-2.5 sm:p-3 cursor-pointer transition-all hover:shadow-xs group/total"
+          title="Chạm vào đây để mở hộp thoại điều chỉnh Chỉ số Điện, Nước và Phí dịch vụ"
+        >
+          <div className="flex items-center justify-between text-xs text-indigo-950 font-black mb-1">
+            <span className="flex items-center gap-1.5">
+              <Calculator className="w-4 h-4 text-indigo-600 shrink-0" />
+              <span>Tổng còn phải thu:</span>
+            </span>
+            <span className="text-[11px] text-indigo-700 bg-white px-2 py-0.5 rounded-full border border-indigo-200 font-extrabold group-hover/total:bg-indigo-600 group-hover/total:text-white transition-colors flex items-center gap-1 shadow-2xs">
+              <SlidersHorizontal className="w-3 h-3" />
+              <span>Điều chỉnh</span>
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <div className="text-[11px] text-slate-600 font-medium truncate pr-2 space-x-1">
+              <span>Phát sinh: <strong>{formatVND(breakdown.currentCycleTotal)}</strong></span>
+              {breakdown.previousDebt > 0 && <span className="text-amber-700 font-bold">• Nợ: +{formatVND(breakdown.previousDebt)}</span>}
+              {breakdown.paidAmount > 0 && <span className="text-emerald-700 font-bold">• Đã nộp: -{formatVND(breakdown.paidAmount)}</span>}
             </div>
-          );
-        })()}
+            <span className="text-lg sm:text-2xl font-black text-indigo-950 tracking-tight tabular-nums">
+              {formatVND(breakdown.remainingBalance)}
+            </span>
+          </div>
+        </div>
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>

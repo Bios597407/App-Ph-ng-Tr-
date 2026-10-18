@@ -130,9 +130,9 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ payment, room, onClo
                 Quét mã để xác minh thông tin đối soát thu tiền thực tế
               </p>
             </div>
-            {qrCodeUrl && (
+            {qrCodeUrl ? (
               <img src={qrCodeUrl} alt="QR Phiếu thu" className="w-16 h-16 rounded-md bg-white p-1" />
-            )}
+            ) : null}
           </div>
 
           {/* Legal disclaimer notice */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Room, Invoice, Payment } from '../types/index.ts';
 import { api } from '../services/api.ts';
 import { formatVND } from '../utils/formatters.ts';
+import { calculateRoomBillingBreakdown } from '../utils/billingCalculator.ts';
 import {
   X,
   CreditCard,
@@ -17,6 +18,7 @@ interface QuickCollectModalProps {
   initialRoomId?: string;
   rooms: Room[];
   invoices: Invoice[];
+  payments?: Payment[];
   onClose: () => void;
   onSuccess: (payment: Payment) => void;
 }
@@ -25,6 +27,7 @@ export const QuickCollectModal: React.FC<QuickCollectModalProps> = ({
   initialRoomId,
   rooms,
   invoices,
+  payments = [],
   onClose,
   onSuccess,
 }) => {
@@ -51,21 +54,24 @@ export const QuickCollectModal: React.FC<QuickCollectModalProps> = ({
 
   useEffect(() => {
     if (currentRoom) {
-      // Find payer name
+      // Find payer name & default amount
       const activeInv = roomInvoices[0];
       if (activeInv) {
         setPayerName(activeInv.payerName);
+        const bd = calculateRoomBillingBreakdown({
+          room: currentRoom,
+          currentPeriod: activeInv.periodMonth,
+          invoice: activeInv,
+          payments,
+          allInvoices: invoices,
+        });
+        setAmountStr(bd.remainingBalance.toString());
       } else {
         setPayerName(currentRoom.name);
-      }
-      // Default to total remaining debt if > 0
-      if (totalRemainingDebt > 0) {
-        setAmountStr(totalRemainingDebt.toString());
-      } else {
         setAmountStr(currentRoom.currentRent.toString());
       }
     }
-  }, [selectedRoomId, totalRemainingDebt]);
+  }, [selectedRoomId]);
 
   const numAmount = parseInt(amountStr.replace(/\D/g, ''), 10) || 0;
 
@@ -168,18 +174,15 @@ export const QuickCollectModal: React.FC<QuickCollectModalProps> = ({
             {/* Current Debt & Billing Breakdown Summary */}
             {(() => {
               const activeInv = roomInvoices[0];
-              const rentItem = activeInv?.items.find((i) => i.type === 'rent');
-              const elecItem = activeInv?.items.find((i) => i.type === 'electricity');
-              const waterItem = activeInv?.items.find((i) => i.type === 'water');
-              const serviceItems = activeInv?.items.filter((i) =>
-                ['garbage', 'internet', 'other'].includes(i.type)
-              ) || [];
-
-              const rentAmt = rentItem?.amount || currentRoom?.currentRent || 0;
-              const elecAmt = elecItem?.amount || 0;
-              const waterAmt = waterItem?.amount || 0;
-              const utilityAmt = elecAmt + waterAmt;
-              const serviceAmt = serviceItems.reduce((s, i) => s + i.amount, 0);
+              const breakdown = currentRoom && activeInv
+                ? calculateRoomBillingBreakdown({
+                    room: currentRoom,
+                    currentPeriod: activeInv.periodMonth,
+                    invoice: activeInv,
+                    payments,
+                    allInvoices: invoices,
+                  })
+                : null;
 
               return (
                 <div className="bg-slate-850 rounded-xl p-3.5 border border-slate-800 space-y-2.5 text-xs">
@@ -196,70 +199,70 @@ export const QuickCollectModal: React.FC<QuickCollectModalProps> = ({
                     </div>
                   </div>
 
-                  {/* ITEMIZED BREAKDOWN LIST - KEEPING ALL ACCESSIBLE ITEMS */}
-                  {activeInv && (
+                  {/* ITEMIZED BREAKDOWN LIST - STANDARDIZED 8 ITEMS */}
+                  {breakdown && (
                     <div className="space-y-1.5 pt-0.5 text-slate-300">
                       <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Bảng kê chi tiết cấu thành khoản thu:
                       </div>
                       
-                      {/* Rent */}
+                      {/* 1. Rent */}
                       <div className="flex justify-between items-center bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-750">
-                        <span>🏠 Tiền thuê phòng:</span>
-                        <span className="font-extrabold text-white">{formatVND(rentAmt)}</span>
+                        <span>🏠 1. Tiền thuê phòng:</span>
+                        <span className="font-extrabold text-white">{formatVND(breakdown.baseRent)}</span>
                       </div>
 
-                      {/* Electricity */}
-                      <div className="flex justify-between items-center bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-750">
-                        <span>
-                          ⚡ Điện ({elecItem?.quantity || 0} kWh x {(elecItem?.unitPrice || 5000).toLocaleString('vi-VN')} đ):
-                        </span>
-                        <span className="font-extrabold text-amber-300">{formatVND(elecAmt)}</span>
-                      </div>
-
-                      {/* Water */}
+                      {/* 2. Electricity */}
                       <div className="flex justify-between items-center bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-750">
                         <span>
-                          💧 Nước ({waterItem?.quantity || 0} m³ x {(waterItem?.unitPrice || 4000).toLocaleString('vi-VN')} đ):
+                          ⚡ 2. Điện ({breakdown.electricUsage} kWh x {breakdown.electricRate.toLocaleString('vi-VN')} đ):
                         </span>
-                        <span className="font-extrabold text-sky-300">{formatVND(waterAmt)}</span>
+                        <span className="font-extrabold text-amber-300">{formatVND(breakdown.electricTotal)}</span>
                       </div>
 
-                      {/* Service fees */}
+                      {/* 3. Water */}
                       <div className="flex justify-between items-center bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-750">
-                        <span>🗑️ Phí dịch vụ (Rác, Wifi, Phụ phí):</span>
-                        <span className="font-extrabold text-teal-300">+{formatVND(serviceAmt)}</span>
+                        <span>
+                          💧 3. Nước ({breakdown.waterUsage} m³ x {breakdown.waterRate.toLocaleString('vi-VN')} đ):
+                        </span>
+                        <span className="font-extrabold text-sky-300">{formatVND(breakdown.waterTotal)}</span>
                       </div>
 
-                      {/* Current Cycle Total */}
+                      {/* 4. Service fees */}
+                      <div className="flex justify-between items-center bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-750">
+                        <span>🏢 4. Phí dịch vụ (Rác, Wifi, Khác...):</span>
+                        <span className="font-extrabold text-teal-300">+{formatVND(breakdown.totalServiceFees)}</span>
+                      </div>
+
+                      {/* 5. Current Cycle Total */}
                       <div className="flex justify-between items-center bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-700 font-extrabold text-white">
-                        <span>📊 Tổng phát sinh kỳ này:</span>
-                        <span className="font-mono">{formatVND(activeInv.currentCycleTotal)}</span>
+                        <span>📊 5. Tổng phát sinh kỳ này:</span>
+                        <span className="font-mono">{formatVND(breakdown.currentCycleTotal)}</span>
                       </div>
 
-                      {/* Previous Debt */}
-                      {activeInv.previousDebt > 0 && (
+                      {/* 6. Previous Debt */}
+                      {breakdown.previousDebt > 0 && (
                         <div className="flex justify-between items-center bg-rose-950/40 px-2.5 py-1.5 rounded-lg border border-rose-900/50 text-rose-300">
-                          <span>➕ Nợ cũ kỳ trước mang sang:</span>
-                          <span className="font-extrabold">+{formatVND(activeInv.previousDebt)}</span>
+                          <span>➕ 6. Nợ cũ kỳ trước mang sang:</span>
+                          <span className="font-extrabold">+{formatVND(breakdown.previousDebt)}</span>
                         </div>
                       )}
 
-                      {/* Previous Paid Amount */}
-                      {activeInv.paidAmount > 0 && (
-                        <div className="flex justify-between items-center bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-900/50 text-emerald-300">
-                          <span>🔻 Đã thanh toán đợt trước:</span>
-                          <span className="font-extrabold">-{formatVND(activeInv.paidAmount)}</span>
+                      {/* 7. Previous Paid Amount */}
+                      {breakdown.paidAmount > 0 && (
+                        <div className="flex justify-between items-center bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-900/50 text-emerald-300 font-extrabold">
+                          <span>🔻 7. Đã thanh toán đợt trước / Trả trước:</span>
+                          <span>-{formatVND(breakdown.paidAmount)}</span>
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* TOTAL REMAINING */}
+                  {/* 8. TOTAL REMAINING */}
                   <div className="flex justify-between items-center text-sm pt-2 border-t border-slate-800 font-black">
-                    <span className="text-amber-300">Tổng còn phải thu:</span>
-                    <span className="text-amber-400 text-lg tabular-nums">
-                      {formatVND(totalRemainingDebt)}
+                    <span className="text-amber-300">8. Tổng còn phải thu:</span>
+                    <span className="text-amber-400 text-lg tabular-nums font-mono">
+                      {formatVND(breakdown ? breakdown.remainingBalance : totalRemainingDebt)}
                     </span>
                   </div>
                 </div>
@@ -291,23 +294,32 @@ export const QuickCollectModal: React.FC<QuickCollectModalProps> = ({
               {/* Smart Context-Aware Quick Amount Chips */}
               {(() => {
                 const activeInv = roomInvoices[0];
-                const rentAmt = activeInv?.items.find((i) => i.type === 'rent')?.amount || currentRoom?.currentRent || 0;
-                const elecAmt = activeInv?.items.find((i) => i.type === 'electricity')?.amount || 0;
-                const waterAmt = activeInv?.items.find((i) => i.type === 'water')?.amount || 0;
-                const utilityAmt = elecAmt + waterAmt;
+                const bd = currentRoom && activeInv
+                  ? calculateRoomBillingBreakdown({
+                      room: currentRoom,
+                      currentPeriod: activeInv.periodMonth,
+                      invoice: activeInv,
+                      payments,
+                      allInvoices: invoices,
+                    })
+                  : null;
+
+                const targetRemaining = bd ? bd.remainingBalance : totalRemainingDebt;
+                const rentAmt = bd ? bd.baseRent : (currentRoom?.currentRent || 0);
+                const utilityAmt = bd ? (bd.electricTotal + bd.waterTotal) : 0;
 
                 return (
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    {totalRemainingDebt > 0 && (
+                    {targetRemaining > 0 && (
                       <button
                         type="button"
-                        onClick={() => setAmountStr(totalRemainingDebt.toString())}
+                        onClick={() => setAmountStr(targetRemaining.toString())}
                         className="px-2.5 py-1.5 rounded-lg bg-emerald-950/80 border border-emerald-600 text-emerald-300 text-xs font-black hover:bg-emerald-900 transition-colors shadow-2xs cursor-pointer"
                       >
-                        Trả hết ({formatVND(totalRemainingDebt)})
+                        Trả hết ({formatVND(targetRemaining)})
                       </button>
                     )}
-                    {rentAmt > 0 && rentAmt !== totalRemainingDebt && (
+                    {rentAmt > 0 && rentAmt !== targetRemaining && (
                       <button
                         type="button"
                         onClick={() => setAmountStr(rentAmt.toString())}
@@ -316,7 +328,7 @@ export const QuickCollectModal: React.FC<QuickCollectModalProps> = ({
                         Chỉ tiền phòng ({formatVND(rentAmt)})
                       </button>
                     )}
-                    {utilityAmt > 0 && utilityAmt !== totalRemainingDebt && (
+                    {utilityAmt > 0 && utilityAmt !== targetRemaining && (
                       <button
                         type="button"
                         onClick={() => setAmountStr(utilityAmt.toString())}

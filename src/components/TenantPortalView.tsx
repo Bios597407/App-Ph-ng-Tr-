@@ -278,16 +278,18 @@ export const TenantPortalView: React.FC<TenantPortalViewProps> = ({
 
                       <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-900 p-3 rounded-xl border border-slate-800">
                         {/* QR Code image */}
-                        <div className="bg-white p-2 rounded-xl shrink-0 shadow-md">
-                          <img
-                            src={qrCodeUrl}
-                            alt="VietQR"
-                            className="w-40 h-40 object-contain rounded"
-                            onError={(e) => {
-                              (e.target as any).src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(memo);
-                            }}
-                          />
-                        </div>
+                        {qrCodeUrl ? (
+                          <div className="bg-white p-2 rounded-xl shrink-0 shadow-md">
+                            <img
+                              src={qrCodeUrl}
+                              alt="VietQR"
+                              className="w-40 h-40 object-contain rounded"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        ) : null}
 
                         {/* Bank Details */}
                         <div className="space-y-2 text-xs w-full">

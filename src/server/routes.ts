@@ -1810,6 +1810,41 @@ apiRouter.post('/backup/trigger-now', authenticateUser, requireRole('landlord'),
   res.json({ success: true, filename });
 });
 
+// ================= ADMINISTRATIVE FEATURES =================
+apiRouter.post('/admin/reset-debts', authenticateUser, requireRole('landlord'), (req, res) => {
+  const { periodMonth } = req.body;
+  if (!periodMonth) {
+    return res.status(400).json({ error: 'Thiếu thông tin kỳ thanh toán.' });
+  }
+
+  const db = getDb();
+  let count = 0;
+  
+  db.invoices.forEach((inv) => {
+    if (inv.periodMonth === periodMonth && inv.status !== 'cancelled') {
+      inv.previousDebt = 0;
+      // Recalculate remaining balance
+      const paid = inv.paidAmount || 0;
+      const advance = inv.appliedAdvance || 0;
+      inv.remainingBalance = inv.currentCycleTotal - paid - advance;
+      count++;
+    }
+  });
+
+  persistDb(db);
+
+  const actor = (req as any).user;
+  addAuditLog(
+    { id: actor.id, name: actor.fullName, role: actor.role },
+    'RESET_DEBTS',
+    'admin',
+    `reset-debt-${periodMonth}`,
+    `Đã reset nợ cũ kỳ ${periodMonth} về 0 cho ${count} hóa đơn.`
+  );
+
+  res.json({ success: true, count });
+});
+
 // ================= ACCEPTANCE TEST SUITE =================
 apiRouter.get('/test-suite/run', authenticateUser, (req, res) => {
   const results = runAll32AcceptanceTests();

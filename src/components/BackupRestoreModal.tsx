@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   X,
   FileJson,
+  Calculator,
 } from 'lucide-react';
 
 interface BackupRestoreModalProps {
@@ -22,6 +23,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ onClose,
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [triggering, setTriggering] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -37,6 +39,30 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ onClose,
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetDebts = async () => {
+    const period = '2026-10';
+    if (!confirm("Xóa toàn bộ số dư nợ cũ mang sang của tất cả 9 phòng về 0.")) {
+      return;
+    }
+
+    setResetting(true);
+    setStatusMsg(null);
+    try {
+      // Small delay to show loading state to user
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const res = await api.resetAllDebts(period);
+      setStatusMsg({ 
+        type: 'success', 
+        text: `Đã reset thành công nợ cũ của ${res.count} hóa đơn kỳ ${period} về 0.` 
+      });
+      onRefresh();
+    } catch (err: any) {
+      setStatusMsg({ type: 'error', text: err.message || 'Lỗi khi reset nợ.' });
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -138,6 +164,35 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ onClose,
               <span>{statusMsg.text}</span>
             </div>
           )}
+
+          {/* ADMINISTRATIVE FEATURES */}
+          <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-800/40 space-y-3">
+            <div className="flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-amber-400" />
+              <h4 className="font-bold text-amber-200 text-sm">Tính năng Quản trị Đặc biệt</h4>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                <strong>Reset Nợ kỳ cũ (T10/2026):</strong> Xóa toàn bộ số dư nợ cũ mang sang của tất cả 9 phòng về 0. Thường dùng khi bắt đầu chu kỳ quản lý mới.
+              </p>
+              <button
+                onClick={handleResetDebts}
+                disabled={resetting}
+                className={`shrink-0 py-2 px-4 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all ${
+                  resetting 
+                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed' 
+                    : 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-900/20'
+                }`}
+              >
+                {resetting ? (
+                  <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-3.5 h-3.5" />
+                )}
+                <span>Thực hiện Reset</span>
+              </button>
+            </div>
+          </div>
 
           {/* Action Boxes */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

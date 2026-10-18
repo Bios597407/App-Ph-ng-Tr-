@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Room, Invoice, MeterReading } from '../types/index.ts';
 import { api } from '../services/api.ts';
 import { formatVND } from '../utils/formatters.ts';
+import { calculateRoomBillingBreakdown } from '../utils/billingCalculator.ts';
 import {
   X,
   Zap,
@@ -556,37 +557,67 @@ export const BillingAdjustmentModal: React.FC<BillingAdjustmentModalProps> = ({
             </div>
           </div>
 
-          {/* 5. SUMMARY CALCULATION BOX */}
-          <div className="bg-linear-to-br from-indigo-900 to-slate-900 text-white rounded-xl p-4 shadow-md space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-indigo-200 font-extrabold flex items-center gap-1.5">
-                <Calculator className="w-4 h-4 text-emerald-400" />
-                <span>Tổng số tiền kỳ này ({periodLabel}):</span>
-              </span>
-              <span className="text-2xl sm:text-3xl font-black text-emerald-400 font-mono tracking-tight tabular-nums">
-                {formatVND(totalBillCalculated)}
-              </span>
-            </div>
+          {/* 5. SUMMARY CALCULATION BOX - STANDARDIZED WITH ALL OTHER MODALS */}
+          {(() => {
+            const breakdown = calculateRoomBillingBreakdown({
+              room,
+              currentPeriod,
+              invoice: currentInvoice || undefined,
+              meterReading: meterReading || undefined,
+              overrides: {
+                rent: rentNum,
+                electricStart: numEStart,
+                electricEnd: numEEnd,
+                electricRate: eRate,
+                waterStart: numWStart,
+                waterEnd: numWEnd,
+                waterRate: wRate,
+                garbageFee: garbageNum,
+                internetFee: internetNum,
+                otherFee: otherNum,
+              },
+            });
 
-            <div className="pt-2 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-medium text-slate-300">
-              <div className="bg-white/5 p-2 rounded-lg">
-                <span className="text-slate-400 block text-[11px]">Tiền phòng:</span>
-                <span className="font-mono font-bold text-white">{formatVND(rentNum)}</span>
+            return (
+              <div className="bg-linear-to-br from-indigo-900 to-slate-900 text-white rounded-xl p-4 shadow-md space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <span className="text-xs uppercase tracking-wider text-indigo-200 font-extrabold flex items-center gap-1.5">
+                      <Calculator className="w-4 h-4 text-emerald-400" />
+                      <span>Tổng còn phải thu thực tế ({periodLabel}):</span>
+                    </span>
+                    <div className="text-[11px] text-slate-300 font-medium mt-1 space-x-2">
+                      <span>Phát sinh kỳ này: <strong className="text-white">{formatVND(breakdown.currentCycleTotal)}</strong></span>
+                      {breakdown.previousDebt > 0 && <span className="text-amber-300">• Nợ cũ: +{formatVND(breakdown.previousDebt)}</span>}
+                      {breakdown.paidAmount > 0 && <span className="text-emerald-300">• Đã nộp: -{formatVND(breakdown.paidAmount)}</span>}
+                    </div>
+                  </div>
+                  <span className="text-2xl sm:text-3xl font-black text-emerald-400 font-mono tracking-tight tabular-nums">
+                    {formatVND(breakdown.remainingBalance)}
+                  </span>
+                </div>
+
+                <div className="pt-2 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-medium text-slate-300">
+                  <div className="bg-white/5 p-2 rounded-lg">
+                    <span className="text-slate-400 block text-[11px]">1. Tiền phòng:</span>
+                    <span className="font-mono font-bold text-white">{formatVND(breakdown.baseRent)}</span>
+                  </div>
+                  <div className="bg-white/5 p-2 rounded-lg">
+                    <span className="text-amber-400 block text-[11px]">2. Tiền điện ({breakdown.electricUsage} kWh):</span>
+                    <span className="font-mono font-bold text-amber-300">{formatVND(breakdown.electricTotal)}</span>
+                  </div>
+                  <div className="bg-white/5 p-2 rounded-lg">
+                    <span className="text-sky-400 block text-[11px]">3. Tiền nước ({breakdown.waterUsage} m³):</span>
+                    <span className="font-mono font-bold text-sky-300">{formatVND(breakdown.waterTotal)}</span>
+                  </div>
+                  <div className="bg-white/5 p-2 rounded-lg">
+                    <span className="text-indigo-300 block text-[11px]">4. Phí DV & Khác:</span>
+                    <span className="font-mono font-bold text-white">{formatVND(breakdown.totalServiceFees)}</span>
+                  </div>
+                </div>
               </div>
-              <div className="bg-white/5 p-2 rounded-lg">
-                <span className="text-amber-400 block text-[11px]">Tiền điện ({eUsage} kWh):</span>
-                <span className="font-mono font-bold text-amber-300">{formatVND(eTotalCost)}</span>
-              </div>
-              <div className="bg-white/5 p-2 rounded-lg">
-                <span className="text-sky-400 block text-[11px]">Tiền nước ({wUsage} m³):</span>
-                <span className="font-mono font-bold text-sky-300">{formatVND(wTotalCost)}</span>
-              </div>
-              <div className="bg-white/5 p-2 rounded-lg">
-                <span className="text-indigo-300 block text-[11px]">Phí DV & Khác:</span>
-                <span className="font-mono font-bold text-white">{formatVND(totalServiceFees)}</span>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
         </div>
 
         {/* MODAL FOOTER */}
