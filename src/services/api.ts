@@ -1110,24 +1110,38 @@ export class ApiClient {
   }
   // Reset all debts for a specific period
   async resetAllDebts(periodMonth: string): Promise<{ success: boolean; count: number }> {
+    let serverRes: { success: boolean; count: number } | null = null;
     try {
-      return await this.request('/admin/reset-debts', {
+      serverRes = await this.request('/admin/reset-debts', {
         method: 'POST',
         body: JSON.stringify({ periodMonth }),
       });
-    } catch {
-      const db = getClientFallbackDb();
-      let count = 0;
-      db.invoices.forEach((inv) => {
-        if (inv.periodMonth === periodMonth && inv.status !== 'cancelled') {
-          inv.previousDebt = 0;
-          inv.remainingBalance = inv.currentCycleTotal - (inv.paidAmount || 0) - (inv.appliedAdvance || 0);
-          count++;
-        }
-      });
-      saveClientFallbackDb(db);
-      return { success: true, count };
+    } catch (e) {
+      console.warn('API reset-debts fallback to client DB:', e);
     }
+
+    // Always synchronize local fallback DB to maintain instant reactivity
+    const db = getClientFallbackDb();
+    let count = 0;
+    db.invoices.forEach((inv) => {
+      if (inv.periodMonth === periodMonth && inv.status !== 'cancelled') {
+        inv.previousDebt = 0;
+        const paid = inv.paidAmount || 0;
+        const advance = inv.appliedAdvance || 0;
+        inv.remainingBalance = Math.max(0, (inv.currentCycleTotal || 0) - paid - advance);
+        count++;
+      }
+    });
+
+    // Also zero out any active stay initial debts so derived debt doesn't re-emerge
+    db.tenancies.forEach((t) => {
+      if (t.status === 'active' && t.initialDebt > 0) {
+        t.initialDebt = 0;
+      }
+    });
+
+    saveClientFallbackDb(db);
+    return serverRes || { success: true, count };
   }
 }
 

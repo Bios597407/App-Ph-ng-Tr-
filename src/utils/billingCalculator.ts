@@ -193,14 +193,9 @@ export function calculateRoomBillingBreakdown(params: {
   const derivedPrevDebt = prevInv ? Math.max(0, prevInv.remainingBalance) : 0;
 
   let previousDebt =
-    invoice?.previousDebt !== undefined && invoice.previousDebt > 0
+    invoice?.previousDebt !== undefined
       ? invoice.previousDebt
       : derivedPrevDebt;
-
-  // SYSTEM OVERRIDE: Reset all debts for October 2026 as per Admin instruction
-  if (currentPeriod === '2026-10') {
-    previousDebt = 0;
-  }
 
   // 7. Paid Amount (Directly computed from payments array or invoice)
   const roomPeriodPayments = payments.filter((p) => {

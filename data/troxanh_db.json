@@ -370,7 +370,7 @@
       "status": "active",
       "baseRent": 1900000,
       "depositAmount": 1900000,
-      "initialDebt": 300000,
+      "initialDebt": 0,
       "initialDebtNote": "Nợ tiền điện nước tháng trước chưa nộp đủ",
       "initialAdvancePayment": 0,
       "paymentDueDay": 10,
@@ -858,10 +858,10 @@
         }
       ],
       "currentCycleTotal": 2460000,
-      "previousDebt": 300000,
+      "previousDebt": 0,
       "appliedAdvance": 0,
       "paidAmount": 0,
-      "remainingBalance": 2760000,
+      "remainingBalance": 2460000,
       "status": "locked",
       "paymentStatus": "unpaid",
       "version": 1
@@ -1401,6 +1401,17 @@
   ],
   "auditLogs": [
     {
+      "id": "audit-1792338666067-hhl3",
+      "timestamp": "2026-10-18T15:51:06.067Z",
+      "actorId": "user-landlord",
+      "actorName": "Nguyễn Văn Chủ (Chủ Trọ)",
+      "role": "landlord",
+      "action": "RESET_DEBTS",
+      "targetType": "admin",
+      "targetId": "reset-debt-2026-10",
+      "description": "Đã reset nợ cũ kỳ 2026-10 về 0 cho 8 hóa đơn và các hợp đồng phòng."
+    },
+    {
       "id": "audit-1792054455912-7dhd",
       "timestamp": "2026-10-15T08:54:15.912Z",
       "actorId": "user-landlord",
@@ -1556,5 +1567,5 @@
     }
   ],
   "lastBackupDate": "2026-10-14T12:40:47.474Z",
-  "version": 33
+  "version": 35
 }

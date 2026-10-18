@@ -1826,20 +1826,27 @@ apiRouter.post('/admin/reset-debts', authenticateUser, requireRole('landlord'), 
       // Recalculate remaining balance
       const paid = inv.paidAmount || 0;
       const advance = inv.appliedAdvance || 0;
-      inv.remainingBalance = inv.currentCycleTotal - paid - advance;
+      inv.remainingBalance = Math.max(0, inv.currentCycleTotal - paid - advance);
       count++;
+    }
+  });
+
+  // Also zero out any active stay initial debts so derived debt doesn't re-emerge
+  db.tenancies.forEach((t) => {
+    if (t.status === 'active' && t.initialDebt > 0) {
+      t.initialDebt = 0;
     }
   });
 
   persistDb(db);
 
-  const actor = (req as any).user;
+  const actor = (req as any).user || { id: 'u_chutro', fullName: 'Chủ Trọ Xanh', role: 'landlord' };
   addAuditLog(
     { id: actor.id, name: actor.fullName, role: actor.role },
     'RESET_DEBTS',
     'admin',
     `reset-debt-${periodMonth}`,
-    `Đã reset nợ cũ kỳ ${periodMonth} về 0 cho ${count} hóa đơn.`
+    `Đã reset nợ cũ kỳ ${periodMonth} về 0 cho ${count} hóa đơn và các hợp đồng phòng.`
   );
 
   res.json({ success: true, count });

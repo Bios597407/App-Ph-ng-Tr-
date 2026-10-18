@@ -16,15 +16,19 @@ import {
 interface BackupRestoreModalProps {
   onClose: () => void;
   onRefresh: () => void;
+  currentPeriod?: string;
 }
 
-export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ onClose, onRefresh }) => {
+export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ onClose, onRefresh, currentPeriod }) => {
   const [backups, setBackups] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [triggering, setTriggering] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const period = currentPeriod || '2026-10';
 
   useEffect(() => {
     loadBackups();
@@ -42,22 +46,16 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ onClose,
     }
   };
 
-  const handleResetDebts = async () => {
-    const period = '2026-10';
-    if (!confirm("Xóa toàn bộ số dư nợ cũ mang sang của tất cả 9 phòng về 0.")) {
-      return;
-    }
-
+  const handleExecuteResetDebts = async () => {
     setResetting(true);
     setStatusMsg(null);
     try {
-      // Small delay to show loading state to user
-      await new Promise(resolve => setTimeout(resolve, 800));
       const res = await api.resetAllDebts(period);
       setStatusMsg({ 
         type: 'success', 
-        text: `Đã reset thành công nợ cũ của ${res.count} hóa đơn kỳ ${period} về 0.` 
+        text: `Đã reset thành công nợ cũ kỳ ${period} về 0 (đã cập nhật ${res.count} hóa đơn/hợp đồng phòng).` 
       });
+      setShowResetConfirm(false);
       onRefresh();
     } catch (err: any) {
       setStatusMsg({ type: 'error', text: err.message || 'Lỗi khi reset nợ.' });
@@ -171,27 +169,73 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ onClose,
               <Calculator className="w-5 h-5 text-amber-400" />
               <h4 className="font-bold text-amber-200 text-sm">Tính năng Quản trị Đặc biệt</h4>
             </div>
-            <div className="flex items-center justify-between gap-4">
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <p className="text-[11px] text-slate-300 leading-relaxed">
-                <strong>Reset Nợ kỳ cũ (T10/2026):</strong> Xóa toàn bộ số dư nợ cũ mang sang của tất cả 9 phòng về 0. Thường dùng khi bắt đầu chu kỳ quản lý mới.
+                <strong>Reset Nợ kỳ cũ ({period}):</strong> Xóa toàn bộ số dư nợ cũ mang sang của tất cả 9 phòng về 0. Thường dùng khi bắt đầu chu kỳ quản lý mới.
               </p>
-              <button
-                onClick={handleResetDebts}
-                disabled={resetting}
-                className={`shrink-0 py-2 px-4 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all ${
-                  resetting 
-                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed' 
-                    : 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-900/20'
-                }`}
-              >
-                {resetting ? (
-                  <RotateCcw className="w-3.5 h-3.5 animate-spin" />
-                ) : (
+              {!showResetConfirm && (
+                <button
+                  type="button"
+                  onClick={() => setShowResetConfirm(true)}
+                  disabled={resetting}
+                  className="shrink-0 py-2 px-4 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-900/20 cursor-pointer"
+                >
                   <RotateCcw className="w-3.5 h-3.5" />
-                )}
-                <span>Thực hiện Reset</span>
-              </button>
+                  <span>Thực hiện Reset</span>
+                </button>
+              )}
             </div>
+
+            {/* Custom Inline Confirmation - No window.confirm needed */}
+            {showResetConfirm && (
+              <div className="p-3.5 rounded-xl bg-amber-950/60 border border-amber-500/50 space-y-3">
+                <div className="flex items-start gap-2.5 text-amber-200">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-bold text-xs text-amber-300">
+                      Xác nhận xóa nợ cũ kỳ {period} của tất cả 9 phòng?
+                    </p>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      Toàn bộ số dư nợ cũ mang sang của 9 phòng trong kỳ {period} sẽ lập tức đưa về 0 VND. Số tiền phải thu sẽ được tính lại tự động.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-1 border-t border-amber-900/40">
+                  <button
+                    type="button"
+                    onClick={() => setShowResetConfirm(false)}
+                    disabled={resetting}
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExecuteResetDebts}
+                    disabled={resetting}
+                    className={`px-4 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 text-white transition-all shadow-md cursor-pointer ${
+                      resetting
+                        ? 'bg-amber-800 text-amber-200 cursor-not-allowed'
+                        : 'bg-amber-600 hover:bg-amber-500 shadow-amber-900/30'
+                    }`}
+                  >
+                    {resetting ? (
+                      <>
+                        <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang xử lý reset...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Xác nhận xóa về 0</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action Boxes */}
